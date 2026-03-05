@@ -60,3 +60,24 @@ export interface NavLink {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: React.ComponentType<{ className?: string }>
 }
+
+// ─── File Upload ───────────────────────────────────────────────────────────────
+
+export interface FileInfo {
+  id: string
+  name: string
+  size: number
+  type: string
+  status: 'uploading' | 'complete' | 'error'
+  progress?: number       // 0–100, relevant when status='uploading'
+  section?: string        // section label the file belongs to
+  errorMessage?: string   // shown on error rows
+}
+
+export interface UploadSection {
+  label: string           // e.g. "Intraoral Scans"
+  acceptedFormats: string[]
+  required: boolean
+  description?: string
+  maxFiles?: number
+}

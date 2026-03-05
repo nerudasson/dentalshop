@@ -55,7 +55,7 @@ Update this section as items are completed:
 - [ ] OrderStatusBadge (`/components/ui/order-status-badge`)
 - [ ] CategorySelector (`/components/domain/category-selector`)
 - [ ] ToothChart (`/components/domain/tooth-chart`)
-- [ ] FileUpload (`/components/domain/file-upload`)
+- [x] FileUpload (`/components/domain/file-upload`)
 - [ ] FileDownloadList (`/components/domain/file-download-list`)
 - [ ] PriceSummary (`/components/domain/price-summary`)
 - [ ] ProviderCard (`/components/domain/provider-card`)
@@ -291,7 +291,16 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
 | Select | `select.tsx` | Radix Select with all sub-parts |
 | Sidebar | `sidebar.tsx` | Custom sidebar system: SidebarProvider, Sidebar, SidebarInset, SidebarTrigger, SidebarHeader/Content/Footer/Group/Menu |
 
-### Tier 2 (Shared Domain) — NONE BUILT YET
+### Tier 2 — Shared Domain Components
+
+- **FileUpload** — `/components/domain/file-upload.tsx`
+  Client component. Drag-and-drop file upload zone with format/size validation, per-file progress bars, and optional multi-section mode.
+  - **Single-zone mode:** one drop zone + file list; validates against `acceptedFormats` and `maxFileSize`
+  - **Multi-section mode:** enabled via `sections` prop; each section has its own formats, label, required flag, and file limit — used in the aligner order wizard
+  - Controlled: `files: FileInfo[]` owned by parent; component calls `onFilesChange` when files are added or removed
+  - `showProgress`: renders a per-file progress bar when `file.status === 'uploading'`; real upload wired later
+  - Exports: `FileUpload` (default), `FileUploadProps`; types `FileInfo` + `UploadSection` live in `lib/types/index.ts`
+  - Demo: `/app/(dashboard)/client/demo-file-upload/page.tsx`
 
 ### Tier 2 (Aligner-Specific) — NONE BUILT YET
 

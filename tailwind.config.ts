@@ -64,7 +64,9 @@ const config: Config = {
         },
         // SAGA.DENTAL brand palette (static hex values for direct use)
         sage: {
+          50:  "#F4F7F2", // drag-over background
           100: "#E1E8DC", // sidebar text / light sage
+          400: "#5E8D4F", // hover/drag-over border
           500: "#4A7A3B", // primary brand
           800: "#1F3319", // sidebar background
         },
@@ -72,8 +74,10 @@ const config: Config = {
           500: "#1D8E7A", // accent
         },
         warm: {
-          50: "#FAFAF8",  // page background
-          800: "#2D2A26", // body text
+          50:  "#FAFAF8",  // page background
+          100: "#F0EDE8",  // file row hover bg
+          300: "#C8C3BB",  // drop zone dashed border (resting)
+          800: "#2D2A26",  // body text
         },
         // Semantic status colors
         "dental-error": "#D94040",
