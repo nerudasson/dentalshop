@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  SAGA.DENTAL Design System
+  Colors use HSL without units so Tailwind can wrap them with hsl().
+
+  Brand palette:
+    sage500  #4A7A3B  → 104 35% 36%   primary
+    teal500  #1D8E7A  → 169 66% 34%   accent
+    warm50   #FAFAF8  → 60 11% 97%    background
+    warm800  #2D2A26  → 30 10% 16%    foreground
+    sage800  #1F3319  → 104 36% 15%   sidebar bg
+    sage100  #E1E8DC  → 104 22% 88%   sidebar fg
+    error    #D94040  → 0 62% 55%
+    warning  #F08C00  → 35 100% 47%
+    success  #3BAF99  → 166 49% 46%
+*/
+
+@layer base {
+  :root {
+    /* Page */
+    --background: 60 11% 97%;
+    --foreground: 30 10% 16%;
+
+    /* Cards & popovers */
+    --card: 0 0% 100%;
+    --card-foreground: 30 10% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 10% 16%;
+
+    /* Primary — sage500 */
+    --primary: 104 35% 36%;
+    --primary-foreground: 104 22% 96%;
+
+    /* Secondary — warm neutral */
+    --secondary: 60 6% 92%;
+    --secondary-foreground: 30 10% 20%;
+
+    /* Muted */
+    --muted: 60 5% 93%;
+    --muted-foreground: 30 8% 46%;
+
+    /* Accent — teal500 */
+    --accent: 169 66% 34%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Destructive — error red */
+    --destructive: 0 62% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders & inputs */
+    --border: 60 6% 88%;
+    --input: 60 6% 88%;
+    --ring: 104 35% 36%;
+
+    /* Border radius */
+    --radius: 0.5rem;
+
+    /* ── Sidebar ── (consumed by sidebar.tsx component) */
+    --sidebar-background: 104 36% 15%;
+    --sidebar-foreground: 104 22% 88%;
+    --sidebar-primary: 104 22% 88%;
+    --sidebar-primary-foreground: 104 36% 15%;
+    --sidebar-accent: 104 32% 22%;
+    --sidebar-accent-foreground: 104 22% 93%;
+    --sidebar-border: 104 30% 20%;
+    --sidebar-ring: 104 35% 36%;
+  }
+
+  /* No dark mode for MVP — add here if needed later */
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
