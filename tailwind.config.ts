@@ -64,15 +64,18 @@ const config: Config = {
         },
         // SAGA.DENTAL brand palette (static hex values for direct use)
         sage: {
+          50:  "#F2F5F0", // table row hover
           100: "#E1E8DC", // sidebar text / light sage
           500: "#4A7A3B", // primary brand
+          600: "#3B6230", // active sort column header text
           800: "#1F3319", // sidebar background
         },
         teal: {
           500: "#1D8E7A", // accent
         },
         warm: {
-          50: "#FAFAF8",  // page background
+          50:  "#FAFAF8", // page background
+          100: "#F5F4F1", // table header background
           800: "#2D2A26", // body text
         },
         // Semantic status colors
