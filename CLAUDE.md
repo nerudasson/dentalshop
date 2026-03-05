@@ -10,6 +10,141 @@ A digital design services marketplace for dental prosthetics. Dentists and labs 
 
 ---
 
+## Current Build Status
+
+> **As of 2026-03-05 — Pre-initialization stage.** No application code exists yet.
+> Only this specification file (CLAUDE.md) and README.md are present.
+
+### What exists
+- `CLAUDE.md` — this specification
+- `README.md` — placeholder
+
+### What does NOT exist yet (everything else)
+- No `package.json` or node_modules
+- No Next.js app structure (`/app`, `/components`, `/lib`, `/prisma`)
+- No configuration files (`tailwind.config.ts`, `tsconfig.json`, `next.config.js`)
+- No components — none of the Tier 1/2/3 components listed below have been built
+- No pages, routes, or API endpoints
+- No Prisma schema or database setup
+- No third-party integrations (Clerk, Stripe, S3/R2)
+
+### Build progress tracker
+
+Update this section as items are completed:
+
+#### Infrastructure
+- [ ] Next.js 14 initialized with TypeScript + Tailwind + App Router
+- [ ] shadcn/ui configured
+- [ ] Prisma configured with PostgreSQL
+- [ ] Clerk Auth integrated
+- [ ] Stripe Connect configured
+- [ ] S3/R2 file storage configured
+- [ ] Transactional email configured
+
+#### Tier 1 — Shell
+- [ ] AppShell (`/components/layout/app-shell`)
+- [ ] RoleProvider (`/components/providers/role-provider`)
+- [ ] WizardLayout (`/components/layout/wizard-layout`)
+
+#### Tier 2 — Shared Domain Components
+- [ ] DataTable (`/components/ui/data-table`)
+- [ ] StarRating (`/components/ui/star-rating`)
+- [ ] OrderStatusBadge (`/components/ui/order-status-badge`)
+- [ ] CategorySelector (`/components/domain/category-selector`)
+- [ ] ToothChart (`/components/domain/tooth-chart`)
+- [ ] FileUpload (`/components/domain/file-upload`)
+- [ ] FileDownloadList (`/components/domain/file-download-list`)
+- [ ] PriceSummary (`/components/domain/price-summary`)
+- [ ] ProviderCard (`/components/domain/provider-card`)
+- [ ] MessageThread (`/components/domain/message-thread`)
+- [ ] EscrowBanner (`/components/domain/escrow-banner`)
+- [ ] DesignParamsForm (`/components/domain/design-params-form`)
+- [ ] OrderTimeline (`/components/domain/order-timeline`)
+
+#### Tier 2 — Aligner-Specific Components
+- [ ] AlignerConfigForm (`/components/domain/aligner-config-form`)
+- [ ] SimulationViewer (`/components/domain/simulation-viewer`)
+- [ ] StagedFileDownload (`/components/domain/staged-file-download`)
+
+#### Tier 3 — Pages (Client flow — prosthetics)
+- [ ] Client dashboard
+- [ ] New order wizard (prosthetics)
+- [ ] Order detail / client workspace
+- [ ] Reviews
+
+#### Tier 3 — Pages (Client flow — aligner)
+- [ ] New order wizard (aligner)
+- [ ] Order detail / client workspace (aligner)
+
+#### Tier 3 — Pages (Provider flow)
+- [ ] Provider dashboard
+- [ ] Order queue
+- [ ] Products listing
+- [ ] Provider workspace (prosthetics)
+- [ ] Provider workspace (aligner)
+- [ ] Reviews
+
+#### Tier 3 — Pages (Admin flow)
+- [ ] Admin dashboard
+- [ ] Orders management
+- [ ] Providers management
+- [ ] Fee configuration
+- [ ] Metrics overview
+
+#### Backend
+- [ ] Prisma schema (`/prisma/schema.prisma`)
+- [ ] Prisma migrations
+- [ ] Server Actions (`/lib/actions/*`)
+- [ ] Zod validation schemas (`/lib/validations/*`)
+- [ ] Replace all dummy data with real DB queries
+
+---
+
+## Project Initialization (First-Time Setup)
+
+When starting from scratch, run in this order:
+
+```bash
+# 1. Initialize Next.js 14 with TypeScript, Tailwind, App Router, no src/ dir
+npx create-next-app@14 . --typescript --tailwind --app --no-src-dir --import-alias "@/*"
+
+# 2. Install core dependencies
+npm install prisma @prisma/client @clerk/nextjs stripe zod react-query
+npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+npm install -D @types/node
+
+# 3. Initialize shadcn/ui
+npx shadcn-ui@latest init
+
+# 4. Initialize Prisma
+npx prisma init
+
+# 5. Add common shadcn components
+npx shadcn-ui@latest add button card input label select textarea badge table
+npx shadcn-ui@latest add dialog sheet tabs tooltip progress avatar separator
+```
+
+**Required environment variables** (create `.env.local`):
+```
+DATABASE_URL=
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET_NAME=
+NEXT_PUBLIC_R2_PUBLIC_URL=
+```
+
+---
+
 ## Architecture Rules
 
 - **App Router only** — use `/app` directory, not `/pages`
@@ -27,12 +162,14 @@ A digital design services marketplace for dental prosthetics. Dentists and labs 
 
 ```
 /app
-  /(auth)           — Clerk auth pages
-  /(dashboard)      — Authenticated routes
+  /(auth)           — Clerk auth pages (sign-in, sign-up)
+  /(dashboard)      — Authenticated routes (layout.tsx wraps all)
     /client         — Client (dentist/lab) pages
-    /provider       — Design provider pages  
+    /provider       — Design provider pages
     /admin          — Super admin pages
   /api              — Webhook endpoints only
+    /webhooks
+      /stripe       — Stripe webhook handler
 
 /components
   /layout           — AppShell, WizardLayout, page wrappers
@@ -41,14 +178,18 @@ A digital design services marketplace for dental prosthetics. Dentists and labs 
   /domain           — Business-specific reusable components
 
 /lib
-  /db               — Prisma client, queries, and helpers
+  /db               — Prisma client singleton, queries, and helpers
   /actions          — Server Actions grouped by domain
+    orders.ts
+    providers.ts
+    fees.ts
   /validations      — Zod schemas
   /utils            — Pure utility functions
-  /types            — Shared TypeScript types
+  /types            — Shared TypeScript types (interfaces, enums)
 
 /prisma
-  schema.prisma     — Full future-proofed schema (MVP only uses subset)
+  schema.prisma     — Full future-proofed schema (MVP uses subset)
+  /migrations       — Generated by prisma migrate
 ```
 
 ---
@@ -64,6 +205,24 @@ Three roles, driven by organization capabilities:
 | **Admin** (Platform) | super_admin flag | Dashboard, Orders, Providers, Fee Config, Metrics |
 
 Use `RoleProvider` context to determine which UI to show. Never hardcode role checks — always read from context.
+
+### RoleProvider contract
+
+```tsx
+// /components/providers/role-provider.tsx
+interface RoleContextValue {
+  role: 'client' | 'provider' | 'admin'
+  orgId: string
+  userId: string
+  orgFlags: {
+    is_practice: boolean
+    can_design: boolean
+    is_super_admin: boolean
+  }
+}
+```
+
+In MVP, this context can be seeded with mock data for development. Replace with real Clerk `useOrganization` + custom metadata when connecting auth.
 
 ---
 
@@ -81,37 +240,29 @@ The schema is future-proofed for production/outsourcing but MVP only uses a subs
 
 **Important:** The order system supports two tracks — `prosthetics` and `aligner`. The `categoryType: 'prosthetics' | 'aligner'` flag propagates through the wizard, order detail, and workspace views.
 
+### Order status state machine
+
+```
+DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
+                                                        ↓
+                                                    REVISION_REQUESTED → IN_PROGRESS
+                                                        ↓
+                                                      DISPUTED → RESOLVED
+```
+
 ---
 
-## Existing Components — DO NOT REBUILD
+## Component Reference
 
-### Tier 1 (Shell)
-- AppShell: /components/layout/app-shell — main layout with role-aware sidebar
-- RoleProvider: /components/providers/role-provider — mocks current user/org context
-- WizardLayout: /components/layout/wizard-layout — multi-step form wrapper (dynamic steps)
+**IMPORTANT:** As components are built, move them from the tracker above to this section. Only list components here once they are complete and tested.
 
-### Tier 2 (Shared Domain Components)
-- ToothChart: /components/domain/tooth-chart — interactive dental tooth selection (prosthetics)
-- FileUpload: /components/domain/file-upload — drag-and-drop with format validation + sections
-- FileDownloadList: /components/domain/file-download-list — flat file list with download actions
-- PriceSummary: /components/domain/price-summary — order price breakdown panel
-- ProviderCard: /components/domain/provider-card — provider comparison card (both tracks)
-- StarRating: /components/ui/star-rating — interactive and display rating
-- OrderStatusBadge: /components/ui/order-status-badge — color-coded status pill (both tracks)
-- MessageThread: /components/domain/message-thread — per-order messaging
-- CategorySelector: /components/domain/category-selector — product category grid (includes aligner)
-- DataTable: /components/ui/data-table — sortable, filterable, paginated table
-- EscrowBanner: /components/domain/escrow-banner — buyer protection messaging
-- DesignParamsForm: /components/domain/design-params-form — dental design parameters (prosthetics)
-- OrderTimeline: /components/domain/order-timeline — vertical progress tracker (both variants)
+### Tier 1 (Shell) — NONE BUILT YET
 
-### Tier 2 (Aligner-Specific Components)
-- AlignerConfigForm: /components/domain/aligner-config-form — arch, goals, complexity, constraints
-- SimulationViewer: /components/domain/simulation-viewer — URL input (provider) + iframe embed (client)
-- StagedFileDownload: /components/domain/staged-file-download — structured aligner deliverables
+### Tier 2 (Shared Domain) — NONE BUILT YET
 
-### Tier 3 (Pages)
-<!-- Update as pages are built -->
+### Tier 2 (Aligner-Specific) — NONE BUILT YET
+
+### Tier 3 (Pages) — NONE BUILT YET
 
 ---
 
@@ -124,12 +275,20 @@ Dual-sided fee (Airbnb-style):
 
 All percentages are admin-configurable. Cascade priority: org override > service type > global default. Fees are locked at order creation — never changed retroactively.
 
+```ts
+// Fee calculation example
+const clientTotal = designPrice * (1 + clientFeeRate)      // e.g. 1.05
+const providerPayout = designPrice * (1 - providerCommissionRate)  // e.g. 0.875
+const platformFee = clientTotal - providerPayout
+```
+
 ---
 
 ## What Is NOT in MVP
 
 Do NOT build any of these:
-- Cost Estimation / quoting flow (Phase 2)
+
+- Cost estimation / quoting flow (Phase 2)
 - Physical production or shipping (Phase 2)
 - Connection/invitation system (Phase 2)
 - QR mobile upload or scanner integration (Phase 3)
@@ -143,23 +302,103 @@ Do NOT build any of these:
 
 ## Coding Conventions
 
-- **Naming:** PascalCase for components, camelCase for functions/variables, kebab-case for file names
-- **Component files:** One component per file, default export, file name matches component name
-- **Props:** Always define a TypeScript interface, never use inline types
-- **State management:** React context for global state, React Query for server state, useState/useReducer for local
-- **Error handling:** Always handle loading/error/empty states in UI components
-- **Dummy data first:** Build all UI with realistic dummy data before connecting backend
-- **Responsive:** Mobile-first, test at 375px minimum width
+### Naming
+- **Components:** PascalCase (`OrderStatusBadge`)
+- **Functions/variables:** camelCase (`calculateProviderPayout`)
+- **Files:** kebab-case (`order-status-badge.tsx`)
+- **Prisma models:** PascalCase singular (`OrderItem`)
+- **DB columns:** snake_case (`selling_org_id`)
+- **Zod schemas:** camelCase suffixed with `Schema` (`createOrderSchema`)
+- **Server Actions:** verb + noun (`createOrder`, `updateWorkStep`)
+
+### Component structure
+```tsx
+// Always: one component per file, named default export, typed props interface
+interface OrderStatusBadgeProps {
+  status: OrderStatus
+  className?: string
+}
+
+export default function OrderStatusBadge({ status, className }: OrderStatusBadgeProps) {
+  // ...
+}
+```
+
+### Server Actions
+```ts
+// /lib/actions/orders.ts
+'use server'
+
+import { z } from 'zod'
+import { db } from '@/lib/db'
+import { createOrderSchema } from '@/lib/validations/orders'
+
+export async function createOrder(input: z.infer<typeof createOrderSchema>) {
+  const validated = createOrderSchema.parse(input)
+  // ...
+}
+```
+
+### State management rules
+- **Global/shared state:** React context
+- **Server state (data fetching):** React Query (`@tanstack/react-query`)
+- **Local UI state:** `useState` or `useReducer`
+- **Form state:** React Hook Form + Zod resolver
+- **Never:** Redux, Zustand, Jotai, or other external state libraries
+
+### Error handling
+Always handle all three states in every data-fetching component:
+```tsx
+if (isLoading) return <Skeleton />
+if (error) return <ErrorMessage error={error} />
+if (!data || data.length === 0) return <EmptyState />
+return <ActualContent data={data} />
+```
+
+### Dummy data
+Build all UI with realistic dummy data before connecting backend:
+```ts
+// Co-locate dummy data near the component using it
+const DUMMY_ORDERS: Order[] = [
+  { id: 'ord_001', status: 'IN_PROGRESS', ... },
+]
+```
+
+### Responsive
+- Mobile-first, minimum 375px width
+- Use Tailwind responsive prefixes: `sm:`, `md:`, `lg:`
+- Test at 375px (mobile), 768px (tablet), 1280px (desktop)
 
 ---
 
 ## Build Order (Reference)
 
-1. Shell: App Shell + Role Provider + Wizard Layout
-2. Shared Tier 2 components (Data Table → Star Rating → Category Selector → Tooth Chart → ...)
-3. Aligner-specific Tier 2 components
-4. Pages: Client flow (prosthetics first, then aligner) → Provider flow → Admin
-5. Backend: Prisma schema → API routes → replace dummy data
-6. Auth & Integrations: Clerk → Stripe Connect → File storage → Emails
-
 Always build prosthetics track first, then add aligner variant.
+
+1. **Infrastructure** — Initialize Next.js, install deps, configure shadcn/ui
+2. **Shell** — AppShell → RoleProvider → WizardLayout
+3. **Tier 2 shared** — DataTable → StarRating → OrderStatusBadge → CategorySelector → ToothChart → FileUpload → FileDownloadList → PriceSummary → ProviderCard → MessageThread → EscrowBanner → DesignParamsForm → OrderTimeline
+4. **Tier 2 aligner** — AlignerConfigForm → SimulationViewer → StagedFileDownload
+5. **Client pages (prosthetics)** — Dashboard → New order wizard → Order detail
+6. **Provider pages (prosthetics)** — Dashboard → Order queue → Workspace
+7. **Admin pages** — Dashboard → Orders → Providers → Fee config
+8. **Client/Provider pages (aligner)** — Mirror prosthetics pages with aligner variants
+9. **Backend** — Prisma schema → Server Actions → replace dummy data
+10. **Auth & integrations** — Clerk → Stripe Connect → File storage → Emails
+
+---
+
+## AI Assistant Guidelines
+
+When making changes to this codebase:
+
+1. **Check this file first** — understand current build status before writing any code
+2. **Never rebuild existing components** — if a component is listed as complete above, read it before touching it
+3. **Update the build tracker** — mark items complete in "Build progress tracker" as they're finished
+4. **Move completed components** — once a component is built, add it to "Component Reference" with its path and a brief description
+5. **Dummy data default** — if backend isn't connected yet, use dummy data; never skip the UI to wait for backend
+6. **One track at a time** — complete prosthetics flow before starting aligner flow
+7. **No premature abstraction** — don't create shared utilities for single-use operations
+8. **No `any`** — TypeScript strict mode; if you don't know the type, investigate and define it
+9. **Preserve the state machine** — order status transitions must follow the defined state machine exactly
+10. **Fee immutability** — fees are locked at order creation; never write code that retroactively modifies fee records
