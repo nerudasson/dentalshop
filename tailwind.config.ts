@@ -66,8 +66,10 @@ const config: Config = {
         sage: {
           50:  "#F2F5F0", // table row hover
           100: "#E1E8DC", // sidebar text / light sage
+          200: "#C3D1BB", // deliverables_uploaded badge bg
           500: "#4A7A3B", // primary brand
           600: "#3B6230", // active sort column header text
+          700: "#2F4D26", // treatment_planning badge text
           800: "#1F3319", // sidebar background
         },
         teal: {
@@ -76,6 +78,10 @@ const config: Config = {
         warm: {
           50:  "#FAFAF8", // page background
           100: "#F5F4F1", // table header background
+          200: "#E8E4DE", // cancelled badge bg
+          300: "#D4D1CA", // empty star color
+          400: "#C0BCBA", // pending badge dot / bg
+          600: "#706B65", // cancelled badge text
           800: "#2D2A26", // body text
         },
         // Semantic status colors
