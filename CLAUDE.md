@@ -12,29 +12,32 @@ A digital design services marketplace for dental prosthetics. Dentists and labs 
 
 ## Current Build Status
 
-> **As of 2026-03-05 — Pre-initialization stage.** No application code exists yet.
-> Only this specification file (CLAUDE.md) and README.md are present.
+> **As of 2026-03-05 — Shell complete.** Next.js initialized, brand design system configured,
+> Tier 1 shell components built, full routing skeleton in place. All dummy data, no auth/backend yet.
 
 ### What exists
 - `CLAUDE.md` — this specification
 - `README.md` — placeholder
+- Next.js 14 project with TypeScript, Tailwind, App Router
+- Brand design system (CSS variables + Tailwind tokens)
+- Tier 1 shell: AppShell, RoleProvider, WizardLayout
+- Full routing skeleton: 2 auth pages + 14 dashboard placeholder pages
+- `lib/types/index.ts` — shared TypeScript types
+- `components/ui/` — Button, Badge, Input, Avatar, Separator, DropdownMenu, Select, Sidebar
 
-### What does NOT exist yet (everything else)
-- No `package.json` or node_modules
-- No Next.js app structure (`/app`, `/components`, `/lib`, `/prisma`)
-- No configuration files (`tailwind.config.ts`, `tsconfig.json`, `next.config.js`)
-- No components — none of the Tier 1/2/3 components listed below have been built
-- No pages, routes, or API endpoints
+### What does NOT exist yet
 - No Prisma schema or database setup
 - No third-party integrations (Clerk, Stripe, S3/R2)
+- No Tier 2 domain components (DataTable, ToothChart, FileUpload, etc.)
+- No real page content (all placeholder shells)
 
 ### Build progress tracker
 
 Update this section as items are completed:
 
 #### Infrastructure
-- [ ] Next.js 14 initialized with TypeScript + Tailwind + App Router
-- [ ] shadcn/ui configured
+- [x] Next.js 14 initialized with TypeScript + Tailwind + App Router
+- [x] shadcn/ui configured (manual component setup — see `components/ui/`)
 - [ ] Prisma configured with PostgreSQL
 - [ ] Clerk Auth integrated
 - [ ] Stripe Connect configured
@@ -42,9 +45,9 @@ Update this section as items are completed:
 - [ ] Transactional email configured
 
 #### Tier 1 — Shell
-- [ ] AppShell (`/components/layout/app-shell`)
-- [ ] RoleProvider (`/components/providers/role-provider`)
-- [ ] WizardLayout (`/components/layout/wizard-layout`)
+- [x] AppShell (`/components/layout/app-shell`)
+- [x] RoleProvider (`/components/providers/role-provider`)
+- [x] WizardLayout (`/components/layout/wizard-layout`)
 
 #### Tier 2 — Shared Domain Components
 - [ ] DataTable (`/components/ui/data-table`)
@@ -256,13 +259,64 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
 
 **IMPORTANT:** As components are built, move them from the tracker above to this section. Only list components here once they are complete and tested.
 
-### Tier 1 (Shell) — NONE BUILT YET
+### Tier 1 (Shell)
+
+- **AppShell** — `/components/layout/app-shell.tsx`
+  Client component. Wraps the app with `SidebarProvider`, `AppSidebar`, and `TopBar`.
+  - Sidebar: dark sage800 background, role-aware nav links (changes per `useRole().role`), logo, org footer
+  - TopBar: `SidebarTrigger`, search input (placeholder), notification bell with badge, user `DropdownMenu`, role quick-action button
+  - Mobile: sidebar hides, `SidebarTrigger` shows hamburger
+  - Tablet/desktop: sidebar collapses/expands via toggle
+
+- **RoleProvider** — `/components/providers/role-provider.tsx`
+  Client component. Provides `RoleContextValue` via React context.
+  - Three dummy profiles: `client` (Smith Dental), `provider` (ClearCAD Studio), `admin` (Platform)
+  - `useRole()` hook — throws if used outside provider
+  - `DevRoleSwitcher` — fixed bottom-right overlay in `NODE_ENV=development` to toggle between profiles
+
+- **WizardLayout** — `/components/layout/wizard-layout.tsx`
+  Server component. Multi-step form wrapper with step indicator row and card content area.
+  Props: `steps: string[]`, `currentStep: number`, `title: string`
+
+### Shared UI Primitives (in `/components/ui/`)
+
+| Component | File | Notes |
+|-----------|------|-------|
+| Button | `button.tsx` | Variants: default, destructive, outline, secondary, ghost, link |
+| Badge | `badge.tsx` | Variants: default, secondary, destructive, outline |
+| Input | `input.tsx` | Standard text input |
+| Avatar | `avatar.tsx` | AvatarImage + AvatarFallback |
+| Separator | `separator.tsx` | Horizontal/vertical rule |
+| DropdownMenu | `dropdown-menu.tsx` | Radix DropdownMenu with all sub-parts |
+| Select | `select.tsx` | Radix Select with all sub-parts |
+| Sidebar | `sidebar.tsx` | Custom sidebar system: SidebarProvider, Sidebar, SidebarInset, SidebarTrigger, SidebarHeader/Content/Footer/Group/Menu |
 
 ### Tier 2 (Shared Domain) — NONE BUILT YET
 
 ### Tier 2 (Aligner-Specific) — NONE BUILT YET
 
-### Tier 3 (Pages) — NONE BUILT YET
+### Tier 3 (Pages)
+
+Routing skeleton is in place. All pages are placeholder Server Components with a title + "coming soon" card.
+
+| Route | File |
+|-------|------|
+| `/client/dashboard` | `app/(dashboard)/client/dashboard/page.tsx` |
+| `/client/orders` | `app/(dashboard)/client/orders/page.tsx` |
+| `/client/reviews` | `app/(dashboard)/client/reviews/page.tsx` |
+| `/client/settings` | `app/(dashboard)/client/settings/page.tsx` |
+| `/provider/dashboard` | `app/(dashboard)/provider/dashboard/page.tsx` |
+| `/provider/queue` | `app/(dashboard)/provider/queue/page.tsx` |
+| `/provider/products` | `app/(dashboard)/provider/products/page.tsx` |
+| `/provider/reviews` | `app/(dashboard)/provider/reviews/page.tsx` |
+| `/provider/settings` | `app/(dashboard)/provider/settings/page.tsx` |
+| `/admin/dashboard` | `app/(dashboard)/admin/dashboard/page.tsx` |
+| `/admin/orders` | `app/(dashboard)/admin/orders/page.tsx` |
+| `/admin/providers` | `app/(dashboard)/admin/providers/page.tsx` |
+| `/admin/fees` | `app/(dashboard)/admin/fees/page.tsx` |
+| `/admin/metrics` | `app/(dashboard)/admin/metrics/page.tsx` |
+| `/sign-in` | `app/(auth)/sign-in/page.tsx` |
+| `/sign-up` | `app/(auth)/sign-up/page.tsx` |
 
 ---
 
