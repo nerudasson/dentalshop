@@ -81,9 +81,9 @@ Update this section as items are completed:
 
 #### Tier 3 — Pages (Provider flow)
 - [ ] Provider dashboard
-- [ ] Order queue
+- [x] Order queue
 - [ ] Products listing
-- [ ] Provider workspace (prosthetics)
+- [x] Provider workspace (prosthetics)
 - [ ] Provider workspace (aligner)
 - [ ] Reviews
 
