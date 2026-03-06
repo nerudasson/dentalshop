@@ -88,9 +88,9 @@ Update this section as items are completed:
 - [ ] Reviews
 
 #### Tier 3 — Pages (Admin flow)
-- [ ] Admin dashboard
-- [ ] Orders management
-- [ ] Providers management
+- [x] Admin dashboard
+- [x] Orders management
+- [x] Providers management
 - [ ] Fee configuration
 - [ ] Metrics overview
 
@@ -460,9 +460,10 @@ Routing skeleton is in place. Most pages are placeholder Server Components with 
 | `/provider/products` | `app/(dashboard)/provider/products/page.tsx` |
 | `/provider/reviews` | `app/(dashboard)/provider/reviews/page.tsx` |
 | `/provider/settings` | `app/(dashboard)/provider/settings/page.tsx` |
+| `/admin` | `app/(dashboard)/admin/page.tsx` — **Admin dashboard with metrics, charts, recent activity** |
 | `/admin/dashboard` | `app/(dashboard)/admin/dashboard/page.tsx` |
 | `/admin/orders` | `app/(dashboard)/admin/orders/page.tsx` |
-| `/admin/providers` | `app/(dashboard)/admin/providers/page.tsx` |
+| `/admin/providers` | `app/(dashboard)/admin/providers/page.tsx` — **Provider management with DataTable, detail panel** |
 | `/admin/fees` | `app/(dashboard)/admin/fees/page.tsx` |
 | `/admin/metrics` | `app/(dashboard)/admin/metrics/page.tsx` |
 | `/sign-in` | `app/(auth)/sign-in/page.tsx` |
