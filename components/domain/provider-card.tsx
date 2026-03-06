@@ -13,6 +13,8 @@ export interface ProviderCardProps {
   onSelect: (id: string) => void
   isSelected: boolean
   showPrice?: boolean
+  /** Replaces "Starting from" label, e.g. "per arch" */
+  priceLabel?: string
   badges?: string[]
 }
 
@@ -38,6 +40,7 @@ export default function ProviderCard({
   onSelect,
   isSelected,
   showPrice = true,
+  priceLabel,
   badges,
 }: ProviderCardProps) {
   const {
@@ -136,7 +139,9 @@ export default function ProviderCard({
       <div className="mt-auto flex items-center justify-between gap-3 border-t border-border p-4">
         {showPrice ? (
           <div>
-            <p className="text-xs text-muted-foreground">Starting from</p>
+            <p className="text-xs text-muted-foreground">
+              {priceLabel ?? "Starting from"}
+            </p>
             <p className="text-xl font-bold text-warm-800">
               {formatPrice(price, currency)}
             </p>

@@ -76,7 +76,7 @@ Update this section as items are completed:
 - [ ] Reviews
 
 #### Tier 3 — Pages (Client flow — aligner)
-- [ ] New order wizard (aligner)
+- [x] New order wizard (aligner)
 - [ ] Order detail / client workspace (aligner)
 
 #### Tier 3 — Pages (Provider flow)
@@ -434,6 +434,7 @@ Routing skeleton is in place. Most pages are placeholder Server Components with 
 | `/client/dashboard` | `app/(dashboard)/client/dashboard/page.tsx` |
 | `/client/orders` | `app/(dashboard)/client/orders/page.tsx` |
 | `/client/orders/new` | `app/(dashboard)/client/orders/new/page.tsx` — **Full 6-step prosthetics order wizard** |
+| `/client/orders/new/aligner` | `app/(dashboard)/client/orders/new/aligner/page.tsx` — **Full 6-step aligner order wizard** |
 | `/client/reviews` | `app/(dashboard)/client/reviews/page.tsx` |
 | `/client/settings` | `app/(dashboard)/client/settings/page.tsx` |
 | `/provider/dashboard` | `app/(dashboard)/provider/dashboard/page.tsx` |
@@ -461,7 +462,26 @@ Client component. 6-step prosthetics order creation wizard composing all Tier 2 
 - **Step 6 — Confirmation:** replaces wizard entirely; animated success ring, dummy order reference `ORD-2024-00142`, `OrderStatusBadge` (PENDING_PAYMENT), next-steps list, "View Orders" + "Back to Dashboard" buttons
 - Wizard state (category, teeth, providerId, files, designParams) persists across all steps; back navigation restores state
 - `isNextDisabled` enforced per step; completed step dots are clickable (jump back)
+- Aligner Design category shows a link to `/client/orders/new/aligner?from=redirect`
 - All dummy data — no backend calls
+
+#### Aligner Order Wizard — `/client/orders/new/aligner`
+
+Client component. 6-step aligner order creation wizard reusing shared Tier 2 components.
+
+- **Step 1 — Category:** `CategorySelector` pre-selected to "Aligner Design"; warns and links to prosthetics wizard if another category is selected
+- **Step 2 — Configuration:** `AlignerConfigForm` — all 5 sections (arch, goals, complexity, constraints, preferences); requires ≥1 treatment goal selected
+- **Step 3 — Provider:** `ProviderList` with 4 dummy aligner providers (SureSmile, Archform, OnyxCeph, uLab); price shown as "per arch" via `priceLabel` prop; requires selection
+- **Step 4 — Patient Files:** `FileUpload` in multi-section mode — Intraoral Scans (.stl/.ply/.obj, required) + Clinical Photos (.jpg/.png, required) + Supplementary Files (.jpg/.png/.dcm/.pdf, optional); requires both required sections filled
+- **Step 5 — Review & Pay:** aligner order summary (arch, complexity, goals, provider, files), `PriceSummary` with per-arch line items + complexity premium + 5% service fee + 19% VAT (applied on designPrice + serviceFee), `EscrowBanner`
+- **Step 6 — Confirmation:** same `WizardConfirmationScreen` shared with prosthetics, with aligner-specific pills and next-steps text ("Your provider will review patient files and begin treatment planning…")
+- Arrives at step 1 (skip category) when `?from=redirect` URL param is present (set by prosthetics wizard link)
+- Shared components in `_components/wizard-shared.tsx`: `ProviderSummaryBanner`, `WizardConfirmationScreen`
+- All dummy data — no backend calls
+
+**Shared between both wizards (`_components/wizard-shared.tsx`):**
+- `ProviderSummaryBanner` — selected-provider summary strip with name, location, turnaround, and optional `/arch` price suffix
+- `WizardConfirmationScreen` — animated success ring, order ref, `OrderStatusBadge`, configurable info pills and next-steps list, "View Orders" + "Back to Dashboard" CTAs
 
 ---
 
