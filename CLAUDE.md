@@ -65,7 +65,7 @@ Update this section as items are completed:
 - [x] OrderTimeline (`/components/domain/order-timeline`)
 
 #### Tier 2 — Aligner-Specific Components
-- [ ] AlignerConfigForm (`/components/domain/aligner-config-form`)
+- [x] AlignerConfigForm (`/components/domain/aligner-config-form`)
 - [ ] SimulationViewer (`/components/domain/simulation-viewer`)
 - [ ] StagedFileDownload (`/components/domain/staged-file-download`)
 
@@ -362,7 +362,18 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
   - Both factories accept any `OrderStatus` and return the correct isCompleted/isActive flags per step
   - Demo: `/app/(dashboard)/client/demo-order-timeline/page.tsx`
 
-### Tier 2 (Aligner-Specific) — NONE BUILT YET
+### Tier 2 (Aligner-Specific)
+
+- **AlignerConfigForm** — `/components/domain/aligner-config-form.tsx`
+  Client component. Aligner-specific configuration form used in aligner order creation step 2. Combines arch selection, treatment goals, complexity tier, clinical constraints, and design preferences in a single controlled form.
+  - **Section 1 — Arch Selection:** live SVG top-down arch diagram (updates on selection) + 3 radio cards (Upper Only / Lower Only / Both Arches), each with its own mini arch diagram; pricing hint below
+  - **Section 2 — Treatment Goals:** 6 icon+label multi-select checkbox pills (Crowding, Spacing, Deep Bite, Open Bite, Crossbite, Midline); free-text additional goals textarea
+  - **Section 3 — Complexity Tier:** 3 radio cards (Simple ≤14 / Moderate 15–25 / Complex 26+) with description and price-rate badge
+  - **Section 4 — Clinical Constraints:** two-column inputs for teeth-not-to-move and planned extractions (FDI notation helpers), full-width other constraints textarea
+  - **Section 5 — Design Preferences:** toggle switches for attachment design and IPR protocol; optional max-stages number input with "Clear (no limit)" action
+  - Sections styled with warm-50 background + widest tracking section headers
+  - `AlignerConfig`, `ArchSelection`, `ComplexityTier` types live in `lib/types/index.ts`
+  - Demo: `/app/(dashboard)/client/demo-aligner-config/page.tsx`
 
 ### Tier 3 (Pages)
 

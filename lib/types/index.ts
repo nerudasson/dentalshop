@@ -100,6 +100,32 @@ export interface DesignParameters {
   specialInstructions: string
 }
 
+// ─── Aligner Config ───────────────────────────────────────────────────────────
+
+export type ArchSelection = 'upper' | 'lower' | 'both'
+export type ComplexityTier = 'simple' | 'moderate' | 'complex'
+
+export interface AlignerConfig {
+  archSelection: ArchSelection
+  /** Slugs from the TREATMENT_GOALS constant, e.g. ["crowding", "deep_bite"] */
+  treatmentGoals: string[]
+  additionalGoals: string
+  complexityTier: ComplexityTier
+  clinicalConstraints: {
+    /** FDI-notation teeth not to be moved, e.g. "17, 27" */
+    teethNotToMove: string
+    /** FDI-notation teeth to be extracted, e.g. "14, 24" */
+    plannedExtractions: string
+    otherConstraints: string
+  }
+  designPreferences: {
+    includeAttachmentDesign: boolean
+    includeIPRProtocol: boolean
+    /** null means "no limit" */
+    maxStagesPreferred: number | null
+  }
+}
+
 // ─── Order Timeline ───────────────────────────────────────────────────────────
 
 export interface TimelineEvent {
