@@ -82,6 +82,25 @@ export interface UploadSection {
   maxFiles?: number
 }
 
+// ─── Message Thread ───────────────────────────────────────────────────────────
+
+export interface MessageAttachment {
+  name: string
+  size: number   // bytes
+  url: string
+}
+
+export interface Message {
+  id: string
+  content: string
+  senderId: string
+  senderName: string
+  senderRole: 'client' | 'provider'
+  senderAvatar?: string
+  createdAt: Date
+  attachments?: MessageAttachment[]
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export interface ProviderInfo {

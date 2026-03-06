@@ -59,7 +59,7 @@ Update this section as items are completed:
 - [ ] FileDownloadList (`/components/domain/file-download-list`)
 - [x] PriceSummary (`/components/domain/price-summary`)
 - [x] ProviderCard (`/components/domain/provider-card`)
-- [ ] MessageThread (`/components/domain/message-thread`)
+- [x] MessageThread (`/components/domain/message-thread`)
 - [x] EscrowBanner (`/components/domain/escrow-banner`)
 - [ ] DesignParamsForm (`/components/domain/design-params-form`)
 - [ ] OrderTimeline (`/components/domain/order-timeline`)
@@ -336,6 +336,19 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
   - `in_escrow`: teal50/teal500 border-left, Lock icon, "Payment held securely", progress bar showing elapsed days vs 7-day auto-release window; accepts `escrowDaysRemaining`
   - `released`: sage50/sage500 border-left, CheckCircle2 icon, "Payment released to provider"
   - Demo: `/app/(dashboard)/client/demo-price-summary/page.tsx`
+
+- **MessageThread** — `/components/domain/message-thread.tsx`
+  Client component. Per-order chat thread used in the provider workspace and client order detail.
+  - Own messages (matched by `currentUserId`) align right with `bg-sage-100` bubble; others align left with `bg-warm-100`
+  - Each bubble shows: sender name, role badge (Client/Provider), message text, HH:MM timestamp
+  - Attachments render as clickable file cards (FileText icon + name + size) below the bubble
+  - Date separators injected between days: "Today", "Yesterday", or "March 3"
+  - Empty state: "No messages yet. Start the conversation."
+  - Compose area: auto-growing textarea (max 120px), Paperclip attach button (hidden `<input type="file" multiple>`), pending attachment pills with dismiss, sage500 Send button; Cmd/Ctrl+Enter hotkey
+  - `isReadOnly` hides compose area entirely; "Read-only" badge appears in header
+  - `maxHeight` prop controls scroll container (default `400px`); auto-scrolls to newest on load and send
+  - Types: `Message`, `MessageAttachment` defined in `lib/types/index.ts`
+  - Demo: `/app/(dashboard)/client/demo-message-thread/page.tsx` — 8 messages over 3 days, client + admin (read-only) views
 
 ### Tier 2 (Aligner-Specific) — NONE BUILT YET
 
