@@ -56,10 +56,10 @@ Update this section as items are completed:
 - [x] CategorySelector (`/components/domain/category-selector`)
 - [x] ToothChart (`/components/domain/tooth-chart`)
 - [x] FileUpload (`/components/domain/file-upload`)
-- [ ] FileDownloadList (`/components/domain/file-download-list`)
+- [x] FileDownloadList (`/components/domain/file-download-list`)
 - [x] PriceSummary (`/components/domain/price-summary`)
 - [x] ProviderCard (`/components/domain/provider-card`)
-- [ ] MessageThread (`/components/domain/message-thread`)
+- [x] MessageThread (`/components/domain/message-thread`)
 - [x] EscrowBanner (`/components/domain/escrow-banner`)
 - [x] DesignParamsForm (`/components/domain/design-params-form`)
 - [x] OrderTimeline (`/components/domain/order-timeline`)
@@ -72,7 +72,7 @@ Update this section as items are completed:
 #### Tier 3 — Pages (Client flow — prosthetics)
 - [ ] Client dashboard
 - [x] New order wizard (prosthetics)
-- [ ] Order detail / client workspace
+- [x] Order detail / client workspace
 - [ ] Reviews
 
 #### Tier 3 — Pages (Client flow — aligner)
@@ -425,6 +425,22 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
   - `StageFile`, `SupportingDoc`, `SupportingDocType`, `AlignerDeliverables` types live in `lib/types/index.ts`
   - Demo: `/app/(dashboard)/client/demo-staged-file-download/page.tsx` — Scenario A: 22+22 bilateral; Scenario B: 14-stage upper-only
 
+- **FileDownloadList** — `/components/domain/file-download-list.tsx`
+  Server component. Flat list of downloadable files with individual download buttons and an optional "Download All as ZIP" header bar.
+  - File rows: FileText icon, file name (truncated), formatted file size, outline download button (`<a download>`)
+  - Header bar: shown when `showDownloadAll` is true and `files.length > 1`; displays total count + total size + "Download All as ZIP" button
+  - Empty state: dashed-border card with configurable `emptyMessage` text
+  - Exports: `FileDownloadList` (default), `FileDownloadListProps`, `DownloadableFile`
+
+- **MessageThread** — `/components/domain/message-thread.tsx`
+  Client component. Conversational thread between client and provider with a compose area.
+  - Messages aligned by role: own messages on the right (sage-500 bubble), other's on the left (warm-100 bubble)
+  - Avatar with role-colored initials fallback; sender name + formatted timestamp above each bubble
+  - Compose textarea: Enter to send, Shift+Enter for newline; send button disabled when empty
+  - Auto-scrolls to newest message on send; empty state prompt when no messages
+  - `currentRole` prop determines which side is "own"; `currentUserName` sets the outgoing sender name
+  - Exports: `MessageThread` (default), `MessageThreadProps`, `ThreadMessage`
+
 ### Tier 3 (Pages)
 
 Routing skeleton is in place. Most pages are placeholder Server Components with a title + "coming soon" card.
@@ -435,6 +451,7 @@ Routing skeleton is in place. Most pages are placeholder Server Components with 
 | `/client/orders` | `app/(dashboard)/client/orders/page.tsx` |
 | `/client/orders/new` | `app/(dashboard)/client/orders/new/page.tsx` — **Full 6-step prosthetics order wizard** |
 | `/client/orders/new/aligner` | `app/(dashboard)/client/orders/new/aligner/page.tsx` — **Full 6-step aligner order wizard** |
+| `/client/orders/[id]` | `app/(dashboard)/client/orders/[id]/page.tsx` — **Prosthetics order detail page** |
 | `/client/reviews` | `app/(dashboard)/client/reviews/page.tsx` |
 | `/client/settings` | `app/(dashboard)/client/settings/page.tsx` |
 | `/provider/dashboard` | `app/(dashboard)/provider/dashboard/page.tsx` |
@@ -482,6 +499,35 @@ Client component. 6-step aligner order creation wizard reusing shared Tier 2 com
 **Shared between both wizards (`_components/wizard-shared.tsx`):**
 - `ProviderSummaryBanner` — selected-provider summary strip with name, location, turnaround, and optional `/arch` price suffix
 - `WizardConfirmationScreen` — animated success ring, order ref, `OrderStatusBadge`, configurable info pills and next-steps list, "View Orders" + "Back to Dashboard" CTAs
+
+#### Client Order Detail — `/client/orders/[id]`
+
+Client component. Full prosthetics order detail page. Dummy data shows an order in `REVIEW` status so all sections are visible.
+
+- **Breadcrumb:** Dashboard → Orders → ORD-2024-00142
+- **Header:** order reference, `OrderStatusBadge`, provider name + date placed
+- **Two-column layout:** main content (full width on mobile) + 320px sidebar (stacks on mobile)
+
+**Status-dependent section visibility:**
+- All statuses: Order Info always visible
+- `PAID`: status callout ("Waiting for provider to start"), no thread
+- `IN_PROGRESS`: status callout + message thread
+- `REVIEW`: full page — all sections visible including review decision panel
+- `COMPLETE`: design deliverables + interactive rating prompt (no review decision)
+
+**Main content sections:**
+1. **Order Info** — category, tooth FDI badges, design parameters summary (`DesignParamsSummary`), uploaded scan `FileDownloadList`
+2. **Design Deliverables** — design `FileDownloadList` (visible from `REVIEW` onward)
+3. **Review Decision** — instruction callout, "Approve Design" (sage500) / "Request Revision" (outline) buttons; revision expands a textarea; on submit shows confirmation banner; `RevisionHistory` lists prior revisions as orange cards (visible only when `status === 'REVIEW'`)
+4. **Rate Your Provider** — `InteractiveStarRating` (8-star hover scale), optional comment textarea, submit collapses to a confirmation (visible only when `status === 'COMPLETE'`)
+5. **Messages** — `MessageThread` with dummy messages between practice and ClearCAD Studio
+
+**Sidebar:**
+- `PriceSummary` — crown design + additional teeth line items, service fee, VAT, total
+- `EscrowBanner` — variant derived from status (`in_escrow` for active, `released` for complete)
+- `OrderTimeline` — prosthetics variant via `getProstheticsTimeline(status)`
+- Provider card — avatar initials, name, location, `StarRating`, software `Badge` pills
+- All dummy data — no backend calls
 
 ---
 
