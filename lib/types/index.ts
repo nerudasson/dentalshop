@@ -143,6 +143,22 @@ export interface TimelineEvent {
   description?: string
 }
 
+// ─── Simulation Viewer ────────────────────────────────────────────────────────
+
+export interface SimulationVersion {
+  url: string
+  submittedAt: Date
+  version: number
+}
+
+export interface TreatmentSummary {
+  totalStages: number
+  estimatedDuration: string
+  iprRequired: boolean
+  upperArchStages?: number
+  lowerArchStages?: number
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export interface ProviderInfo {
