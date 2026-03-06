@@ -77,7 +77,7 @@ Update this section as items are completed:
 
 #### Tier 3 — Pages (Client flow — aligner)
 - [x] New order wizard (aligner)
-- [ ] Order detail / client workspace (aligner)
+- [x] Order detail / client workspace (aligner)
 
 #### Tier 3 — Pages (Provider flow)
 - [ ] Provider dashboard
@@ -452,6 +452,7 @@ Routing skeleton is in place. Most pages are placeholder Server Components with 
 | `/client/orders/new` | `app/(dashboard)/client/orders/new/page.tsx` — **Full 6-step prosthetics order wizard** |
 | `/client/orders/new/aligner` | `app/(dashboard)/client/orders/new/aligner/page.tsx` — **Full 6-step aligner order wizard** |
 | `/client/orders/[id]` | `app/(dashboard)/client/orders/[id]/page.tsx` — **Prosthetics order detail page** |
+| `/client/orders/[id]/aligner` | `app/(dashboard)/client/orders/[id]/aligner/page.tsx` — **Aligner order detail page (tabbed)** |
 | `/client/reviews` | `app/(dashboard)/client/reviews/page.tsx` |
 | `/client/settings` | `app/(dashboard)/client/settings/page.tsx` |
 | `/provider/dashboard` | `app/(dashboard)/provider/dashboard/page.tsx` |
@@ -527,6 +528,37 @@ Client component. Full prosthetics order detail page. Dummy data shows an order 
 - `EscrowBanner` — variant derived from status (`in_escrow` for active, `released` for complete)
 - `OrderTimeline` — prosthetics variant via `getProstheticsTimeline(status)`
 - Provider card — avatar initials, name, location, `StarRating`, software `Badge` pills
+- All dummy data — no backend calls
+
+#### Aligner Order Detail — `/client/orders/[id]/aligner`
+
+Client component. Full aligner order detail with tabbed navigation. Dummy data shows an order in `REVIEW` status so the Treatment Plan tab and review controls are active.
+
+- **Header:** order reference, `OrderStatusBadge`, "Aligner Design" badge, provider name, date placed
+- **Tab navigation:** 5 tabs; tabs 3–4 conditionally revealed by status:
+  - `Overview` — always visible
+  - `Files` — always visible
+  - `Treatment Plan` — visible from `REVIEW` onward (simulation submitted)
+  - `Deliverables` — visible from `COMPLETE` onward (deliverables uploaded)
+  - `Messages` — always visible
+
+**Tab content:**
+
+1. **Overview** — `ConfigSummary` (arches, complexity, goals, constraints, preferences as labeled rows), `OrderTimeline` (aligner 9-step variant), `ProviderCard`
+2. **Files** — three sections (`FileDownloadList` each): Intraoral Scans (required), Clinical Photos (required), Supplementary Files (optional)
+3. **Treatment Plan** — `ClientSimulationViewer` (embed + link toggle, version history), `TreatmentPlanDecision` panel:
+   - "Approve Treatment Plan" (sage500) / "Request Modifications" (outline) / "Reject plan" (ghost, less prominent)
+   - Request Modifications expands textarea → submit shows orange confirmation banner
+   - Reject opens inline confirmation dialog → confirms to DISPUTED flow, contacts support
+   - Revision-in-progress banner shown when `status === 'REVISION_REQUESTED'`
+4. **Deliverables** — `StagedFileDownload` with 22 upper + 19 lower arch STLs + 4 supporting documents
+5. **Messages** — `MessageThread` with dummy thread between Smith Dental and ClearSmile Studio
+
+**Sidebar (all tabs):**
+- Quick status description card with planned stages summary
+- `PriceSummary` — upper arch, lower arch, complexity premium, service fee, VAT, total
+- `EscrowBanner` — variant by status
+- Deliverables-not-ready notice (dashed border) shown until `COMPLETE`
 - All dummy data — no backend calls
 
 ---
