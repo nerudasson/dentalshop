@@ -61,11 +61,11 @@ Update this section as items are completed:
 - [x] ProviderCard (`/components/domain/provider-card`)
 - [ ] MessageThread (`/components/domain/message-thread`)
 - [x] EscrowBanner (`/components/domain/escrow-banner`)
-- [ ] DesignParamsForm (`/components/domain/design-params-form`)
-- [ ] OrderTimeline (`/components/domain/order-timeline`)
+- [x] DesignParamsForm (`/components/domain/design-params-form`)
+- [x] OrderTimeline (`/components/domain/order-timeline`)
 
 #### Tier 2 — Aligner-Specific Components
-- [ ] AlignerConfigForm (`/components/domain/aligner-config-form`)
+- [x] AlignerConfigForm (`/components/domain/aligner-config-form`)
 - [ ] SimulationViewer (`/components/domain/simulation-viewer`)
 - [ ] StagedFileDownload (`/components/domain/staged-file-download`)
 
@@ -337,7 +337,43 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
   - `released`: sage50/sage500 border-left, CheckCircle2 icon, "Payment released to provider"
   - Demo: `/app/(dashboard)/client/demo-price-summary/page.tsx`
 
-### Tier 2 (Aligner-Specific) — NONE BUILT YET
+- **DesignParamsForm** — `/components/domain/design-params-form.tsx`
+  Client component. Prosthetics-specific design parameters form used in order creation step 5 and client settings (saving defaults). Not used for aligner orders.
+  - Fields: margin settings, spacer thickness, minimum thickness (all mm number inputs with unit suffix), contact strength select (Light/Medium/Heavy), occlusion type select (Light/Medium/Heavy Contact), special instructions textarea
+  - Desktop 2-col grid: margin+spacer in row 1, thickness+contact in row 2; single column on mobile
+  - Validation on blur: mm fields checked for positive values within dental range (margin: 0.01–0.5, spacer: 0.01–0.3, thickness: 0.3–3.0); inline error replaces helper text
+  - `defaults` prop: shows "Using your saved defaults" badge (sage50) when current values match; shows "Reset to defaults" link when values differ
+  - `showSaveAsDefault`: shows a checkbox at the bottom that triggers `onSaveAsDefault(values)` when checked
+  - `disabled`: disables all fields for read-only order detail views
+  - `DesignParameters` type lives in `lib/types/index.ts`
+  - Demo: `/app/(dashboard)/client/demo-design-params/page.tsx`
+
+- **OrderTimeline** — `/components/domain/order-timeline.tsx`
+  Server component. Vertical milestone timeline used in client order detail (both tracks) and admin order detail.
+  - Completed steps: sage500 filled circle with checkmark + warm700 text + timestamp
+  - Active step: pulsing sage400 ping + sage500 inner dot + bold warm800 text
+  - Future steps: warm300 empty ring + warm500 muted text
+  - Connector line: sage500 for completed portions, warm200 for future
+  - Each step shows: label, optional description, timestamp (when completed)
+  - `TimelineEvent` type lives in `lib/types/index.ts`
+  - Factory functions co-located in same file:
+    - `getProstheticsTimeline(currentStatus: OrderStatus)` — 6 steps: Order Placed → In Progress → Design Submitted → In Review → Approved → Completed
+    - `getAlignerTimeline(currentStatus: OrderStatus)` — 9 steps: Order Placed → Files Uploaded → Lab Review → Treatment Planning → Simulation Submitted → Treatment Plan Review → Plan Approved → Deliverables Uploaded → Completed
+  - Both factories accept any `OrderStatus` and return the correct isCompleted/isActive flags per step
+  - Demo: `/app/(dashboard)/client/demo-order-timeline/page.tsx`
+
+### Tier 2 (Aligner-Specific)
+
+- **AlignerConfigForm** — `/components/domain/aligner-config-form.tsx`
+  Client component. Aligner-specific configuration form used in aligner order creation step 2. Combines arch selection, treatment goals, complexity tier, clinical constraints, and design preferences in a single controlled form.
+  - **Section 1 — Arch Selection:** live SVG top-down arch diagram (updates on selection) + 3 radio cards (Upper Only / Lower Only / Both Arches), each with its own mini arch diagram; pricing hint below
+  - **Section 2 — Treatment Goals:** 6 icon+label multi-select checkbox pills (Crowding, Spacing, Deep Bite, Open Bite, Crossbite, Midline); free-text additional goals textarea
+  - **Section 3 — Complexity Tier:** 3 radio cards (Simple ≤14 / Moderate 15–25 / Complex 26+) with description and price-rate badge
+  - **Section 4 — Clinical Constraints:** two-column inputs for teeth-not-to-move and planned extractions (FDI notation helpers), full-width other constraints textarea
+  - **Section 5 — Design Preferences:** toggle switches for attachment design and IPR protocol; optional max-stages number input with "Clear (no limit)" action
+  - Sections styled with warm-50 background + widest tracking section headers
+  - `AlignerConfig`, `ArchSelection`, `ComplexityTier` types live in `lib/types/index.ts`
+  - Demo: `/app/(dashboard)/client/demo-aligner-config/page.tsx`
 
 ### Tier 3 (Pages)
 

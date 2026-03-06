@@ -82,6 +82,67 @@ export interface UploadSection {
   maxFiles?: number
 }
 
+// ─── Design Parameters ────────────────────────────────────────────────────────
+
+/** Prosthetics-specific design parameters captured during order creation. */
+export interface DesignParameters {
+  /** Distance between preparation margin and restoration edge, e.g. "0.05mm" */
+  marginSettings: string
+  /** Cement gap between preparation and restoration, e.g. "0.03mm" */
+  spacerThickness: string
+  /** Minimum wall thickness of the restoration, e.g. "0.5mm" */
+  minimumThickness: string
+  /** Proximal contact force: "Light" | "Medium" | "Heavy" */
+  contactStrength: string
+  /** Occlusal contact level: "Light Contact" | "Medium Contact" | "Heavy Contact" */
+  occlusionType: string
+  /** Free-text notes for the design provider */
+  specialInstructions: string
+}
+
+// ─── Aligner Config ───────────────────────────────────────────────────────────
+
+export type ArchSelection = 'upper' | 'lower' | 'both'
+export type ComplexityTier = 'simple' | 'moderate' | 'complex'
+
+export interface AlignerConfig {
+  archSelection: ArchSelection
+  /** Slugs from the TREATMENT_GOALS constant, e.g. ["crowding", "deep_bite"] */
+  treatmentGoals: string[]
+  additionalGoals: string
+  complexityTier: ComplexityTier
+  clinicalConstraints: {
+    /** FDI-notation teeth not to be moved, e.g. "17, 27" */
+    teethNotToMove: string
+    /** FDI-notation teeth to be extracted, e.g. "14, 24" */
+    plannedExtractions: string
+    otherConstraints: string
+  }
+  designPreferences: {
+    includeAttachmentDesign: boolean
+    includeIPRProtocol: boolean
+    /** null means "no limit" */
+    maxStagesPreferred: number | null
+  }
+}
+
+// ─── Order Timeline ───────────────────────────────────────────────────────────
+
+export interface TimelineEvent {
+  /** Machine-readable step key, e.g. "order_placed" */
+  status: string
+  /** Human-readable label shown in the timeline */
+  label: string
+  /** Set when the step has been reached; null/undefined if still in the future */
+  timestamp?: Date
+  /** True when this is the step currently being worked on */
+  isActive: boolean
+  /** True when this step has been fully completed */
+  isCompleted: boolean
+  /** Optional detail text rendered below the label */
+  description?: string
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export interface ProviderInfo {
