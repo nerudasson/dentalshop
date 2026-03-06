@@ -52,9 +52,9 @@ Update this section as items are completed:
 #### Tier 2 — Shared Domain Components
 - [ ] DataTable (`/components/ui/data-table`)
 - [x] StarRating (`/components/ui/star-rating`)
-- [ ] OrderStatusBadge (`/components/ui/order-status-badge`)
-- [ ] CategorySelector (`/components/domain/category-selector`)
-- [ ] ToothChart (`/components/domain/tooth-chart`)
+- [x] OrderStatusBadge (`/components/ui/order-status-badge`)
+- [x] CategorySelector (`/components/domain/category-selector`)
+- [x] ToothChart (`/components/domain/tooth-chart`)
 - [x] FileUpload (`/components/domain/file-upload`)
 - [ ] FileDownloadList (`/components/domain/file-download-list`)
 - [x] PriceSummary (`/components/domain/price-summary`)
@@ -71,12 +71,12 @@ Update this section as items are completed:
 
 #### Tier 3 — Pages (Client flow — prosthetics)
 - [ ] Client dashboard
-- [ ] New order wizard (prosthetics)
+- [x] New order wizard (prosthetics)
 - [ ] Order detail / client workspace
 - [ ] Reviews
 
 #### Tier 3 — Pages (Client flow — aligner)
-- [ ] New order wizard (aligner)
+- [x] New order wizard (aligner)
 - [ ] Order detail / client workspace (aligner)
 
 #### Tier 3 — Pages (Provider flow)
@@ -290,6 +290,7 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
 | DropdownMenu | `dropdown-menu.tsx` | Radix DropdownMenu with all sub-parts |
 | Select | `select.tsx` | Radix Select with all sub-parts |
 | Sidebar | `sidebar.tsx` | Custom sidebar system: SidebarProvider, Sidebar, SidebarInset, SidebarTrigger, SidebarHeader/Content/Footer/Group/Menu |
+| OrderStatusBadge | `order-status-badge.tsx` | Maps `OrderStatus` to a colored outline Badge; all 9 statuses covered |
 
 ### Tier 2 — Shared Domain Components
 
@@ -305,6 +306,23 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
 - **StarRating** — `/components/ui/star-rating.tsx`
   Server-safe display component. Renders 1–5 stars with decimal support via SVG gradient for partial fills.
   Props: `rating: number`, `max?: number` (default 5), `className?`, `starClassName?`
+
+- **CategorySelector** — `/components/domain/category-selector.tsx`
+  Client component. Grid of clickable category cards for order creation step 1.
+  - MVP categories: Crowns, Bridges, Inlays/Onlays, Implant Abutments, Partial Frameworks, Veneers, Aligner Design
+  - Aligner Design card shows "Separate wizard" badge to indicate it routes differently
+  - Selected card: sage500 border + ring + sage50 background; icon box switches to sage500 fill
+  - Controlled: `value: string | null` + `onChange: (category: string) => void`
+
+- **ToothChart** — `/components/domain/tooth-chart.tsx`
+  Client component. Interactive FDI notation tooth chart for selecting teeth to treat.
+  - Full adult permanent dentition (32 teeth), displayed patient-perspective (R on left, L on right)
+  - Quadrant layout: Upper Right (Q1: 18→11) | Upper Left (Q2: 21→28) / Lower Right (Q4: 48→41) | Lower Left (Q3: 31→38)
+  - Tooth button height varies by type: molars taller than incisors for anatomical hint
+  - Selected: sage500 fill; hover: sage50; arch separator + midline divider lines
+  - Overflow-x-auto wrapper for mobile compatibility
+  - Summary bar below chart: "N teeth selected: 11, 12, 21" + "Clear" link
+  - Props: `selectedTeeth: number[]`, `onTeethChange: (teeth: number[]) => void`, `category?: string`
 
 - **ProviderCard** — `/components/domain/provider-card.tsx`
   Client component. Card for a single design provider used in order creation step 3.
@@ -409,12 +427,14 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
 
 ### Tier 3 (Pages)
 
-Routing skeleton is in place. All pages are placeholder Server Components with a title + "coming soon" card.
+Routing skeleton is in place. Most pages are placeholder Server Components with a title + "coming soon" card.
 
 | Route | File |
 |-------|------|
 | `/client/dashboard` | `app/(dashboard)/client/dashboard/page.tsx` |
 | `/client/orders` | `app/(dashboard)/client/orders/page.tsx` |
+| `/client/orders/new` | `app/(dashboard)/client/orders/new/page.tsx` — **Full 6-step prosthetics order wizard** |
+| `/client/orders/new/aligner` | `app/(dashboard)/client/orders/new/aligner/page.tsx` — **Full 6-step aligner order wizard** |
 | `/client/reviews` | `app/(dashboard)/client/reviews/page.tsx` |
 | `/client/settings` | `app/(dashboard)/client/settings/page.tsx` |
 | `/provider/dashboard` | `app/(dashboard)/provider/dashboard/page.tsx` |
@@ -429,6 +449,39 @@ Routing skeleton is in place. All pages are placeholder Server Components with a
 | `/admin/metrics` | `app/(dashboard)/admin/metrics/page.tsx` |
 | `/sign-in` | `app/(auth)/sign-in/page.tsx` |
 | `/sign-up` | `app/(auth)/sign-up/page.tsx` |
+
+#### New Order Wizard — `/client/orders/new`
+
+Client component. 6-step prosthetics order creation wizard composing all Tier 2 domain components.
+
+- **Step 1 — Category:** `CategorySelector` grid; Aligner Design shows "coming soon" alert and blocks progression
+- **Step 2 — Teeth:** `ToothChart` (FDI notation); shows `category — Select Teeth` header; requires ≥1 tooth selected
+- **Step 3 — Provider:** `ProviderList` with 6 dummy prosthetics providers (exocad/3Shape software); selected provider shown in summary banner; requires selection to proceed
+- **Step 4 — Upload & Requirements:** `FileUpload` (accepts .stl/.ply/.obj) + `DesignParamsForm` with pre-loaded defaults; requires ≥1 valid file + valid params
+- **Step 5 — Review & Pay:** order summary (category, teeth, provider, file count), `PriceSummary` (base price + additional teeth + 5% service fee + 19% VAT), `EscrowBanner` variant="payment"; "Place Order" CTA
+- **Step 6 — Confirmation:** replaces wizard entirely; animated success ring, dummy order reference `ORD-2024-00142`, `OrderStatusBadge` (PENDING_PAYMENT), next-steps list, "View Orders" + "Back to Dashboard" buttons
+- Wizard state (category, teeth, providerId, files, designParams) persists across all steps; back navigation restores state
+- `isNextDisabled` enforced per step; completed step dots are clickable (jump back)
+- Aligner Design category shows a link to `/client/orders/new/aligner?from=redirect`
+- All dummy data — no backend calls
+
+#### Aligner Order Wizard — `/client/orders/new/aligner`
+
+Client component. 6-step aligner order creation wizard reusing shared Tier 2 components.
+
+- **Step 1 — Category:** `CategorySelector` pre-selected to "Aligner Design"; warns and links to prosthetics wizard if another category is selected
+- **Step 2 — Configuration:** `AlignerConfigForm` — all 5 sections (arch, goals, complexity, constraints, preferences); requires ≥1 treatment goal selected
+- **Step 3 — Provider:** `ProviderList` with 4 dummy aligner providers (SureSmile, Archform, OnyxCeph, uLab); price shown as "per arch" via `priceLabel` prop; requires selection
+- **Step 4 — Patient Files:** `FileUpload` in multi-section mode — Intraoral Scans (.stl/.ply/.obj, required) + Clinical Photos (.jpg/.png, required) + Supplementary Files (.jpg/.png/.dcm/.pdf, optional); requires both required sections filled
+- **Step 5 — Review & Pay:** aligner order summary (arch, complexity, goals, provider, files), `PriceSummary` with per-arch line items + complexity premium + 5% service fee + 19% VAT (applied on designPrice + serviceFee), `EscrowBanner`
+- **Step 6 — Confirmation:** same `WizardConfirmationScreen` shared with prosthetics, with aligner-specific pills and next-steps text ("Your provider will review patient files and begin treatment planning…")
+- Arrives at step 1 (skip category) when `?from=redirect` URL param is present (set by prosthetics wizard link)
+- Shared components in `_components/wizard-shared.tsx`: `ProviderSummaryBanner`, `WizardConfirmationScreen`
+- All dummy data — no backend calls
+
+**Shared between both wizards (`_components/wizard-shared.tsx`):**
+- `ProviderSummaryBanner` — selected-provider summary strip with name, location, turnaround, and optional `/arch` price suffix
+- `WizardConfirmationScreen` — animated success ring, order ref, `OrderStatusBadge`, configurable info pills and next-steps list, "View Orders" + "Back to Dashboard" CTAs
 
 ---
 

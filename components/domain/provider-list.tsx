@@ -30,6 +30,8 @@ export interface ProviderListProps {
   selectedId?: string
   onSelect: (id: string) => void
   showPrice?: boolean
+  /** Passed to each ProviderCard — replaces "Starting from" label */
+  priceLabel?: string
 }
 
 export default function ProviderList({
@@ -38,6 +40,7 @@ export default function ProviderList({
   selectedId,
   onSelect,
   showPrice = true,
+  priceLabel,
 }: ProviderListProps) {
   const [sortBy, setSortBy] = useState<SortKey>("rating")
   const [maxTurnaround, setMaxTurnaround] = useState<number>(Infinity)
@@ -180,6 +183,7 @@ export default function ProviderList({
               onSelect={onSelect}
               isSelected={selectedId === provider.id}
               showPrice={showPrice}
+              priceLabel={priceLabel}
               badges={providerBadges?.[provider.id]}
             />
           ))}
