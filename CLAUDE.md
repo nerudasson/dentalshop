@@ -61,7 +61,7 @@ Update this section as items are completed:
 - [x] ProviderCard (`/components/domain/provider-card`)
 - [ ] MessageThread (`/components/domain/message-thread`)
 - [x] EscrowBanner (`/components/domain/escrow-banner`)
-- [ ] DesignParamsForm (`/components/domain/design-params-form`)
+- [x] DesignParamsForm (`/components/domain/design-params-form`)
 - [ ] OrderTimeline (`/components/domain/order-timeline`)
 
 #### Tier 2 — Aligner-Specific Components
@@ -336,6 +336,17 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
   - `in_escrow`: teal50/teal500 border-left, Lock icon, "Payment held securely", progress bar showing elapsed days vs 7-day auto-release window; accepts `escrowDaysRemaining`
   - `released`: sage50/sage500 border-left, CheckCircle2 icon, "Payment released to provider"
   - Demo: `/app/(dashboard)/client/demo-price-summary/page.tsx`
+
+- **DesignParamsForm** — `/components/domain/design-params-form.tsx`
+  Client component. Prosthetics-specific design parameters form used in order creation step 5 and client settings (saving defaults). Not used for aligner orders.
+  - Fields: margin settings, spacer thickness, minimum thickness (all mm number inputs with unit suffix), contact strength select (Light/Medium/Heavy), occlusion type select (Light/Medium/Heavy Contact), special instructions textarea
+  - Desktop 2-col grid: margin+spacer in row 1, thickness+contact in row 2; single column on mobile
+  - Validation on blur: mm fields checked for positive values within dental range (margin: 0.01–0.5, spacer: 0.01–0.3, thickness: 0.3–3.0); inline error replaces helper text
+  - `defaults` prop: shows "Using your saved defaults" badge (sage50) when current values match; shows "Reset to defaults" link when values differ
+  - `showSaveAsDefault`: shows a checkbox at the bottom that triggers `onSaveAsDefault(values)` when checked
+  - `disabled`: disables all fields for read-only order detail views
+  - `DesignParameters` type lives in `lib/types/index.ts`
+  - Demo: `/app/(dashboard)/client/demo-design-params/page.tsx`
 
 ### Tier 2 (Aligner-Specific) — NONE BUILT YET
 
