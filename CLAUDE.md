@@ -70,10 +70,10 @@ Update this section as items are completed:
 - [x] StagedFileDownload (`/components/domain/staged-file-download`)
 
 #### Tier 3 — Pages (Client flow — prosthetics)
-- [ ] Client dashboard
+- [x] Client dashboard
 - [x] New order wizard (prosthetics)
 - [x] Order detail / client workspace
-- [ ] Reviews
+- [x] Reviews
 
 #### Tier 3 — Pages (Client flow — aligner)
 - [x] New order wizard (aligner)
