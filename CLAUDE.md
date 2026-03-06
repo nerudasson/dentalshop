@@ -62,7 +62,7 @@ Update this section as items are completed:
 - [ ] MessageThread (`/components/domain/message-thread`)
 - [x] EscrowBanner (`/components/domain/escrow-banner`)
 - [x] DesignParamsForm (`/components/domain/design-params-form`)
-- [ ] OrderTimeline (`/components/domain/order-timeline`)
+- [x] OrderTimeline (`/components/domain/order-timeline`)
 
 #### Tier 2 — Aligner-Specific Components
 - [ ] AlignerConfigForm (`/components/domain/aligner-config-form`)
@@ -347,6 +347,20 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
   - `disabled`: disables all fields for read-only order detail views
   - `DesignParameters` type lives in `lib/types/index.ts`
   - Demo: `/app/(dashboard)/client/demo-design-params/page.tsx`
+
+- **OrderTimeline** — `/components/domain/order-timeline.tsx`
+  Server component. Vertical milestone timeline used in client order detail (both tracks) and admin order detail.
+  - Completed steps: sage500 filled circle with checkmark + warm700 text + timestamp
+  - Active step: pulsing sage400 ping + sage500 inner dot + bold warm800 text
+  - Future steps: warm300 empty ring + warm500 muted text
+  - Connector line: sage500 for completed portions, warm200 for future
+  - Each step shows: label, optional description, timestamp (when completed)
+  - `TimelineEvent` type lives in `lib/types/index.ts`
+  - Factory functions co-located in same file:
+    - `getProstheticsTimeline(currentStatus: OrderStatus)` — 6 steps: Order Placed → In Progress → Design Submitted → In Review → Approved → Completed
+    - `getAlignerTimeline(currentStatus: OrderStatus)` — 9 steps: Order Placed → Files Uploaded → Lab Review → Treatment Planning → Simulation Submitted → Treatment Plan Review → Plan Approved → Deliverables Uploaded → Completed
+  - Both factories accept any `OrderStatus` and return the correct isCompleted/isActive flags per step
+  - Demo: `/app/(dashboard)/client/demo-order-timeline/page.tsx`
 
 ### Tier 2 (Aligner-Specific) — NONE BUILT YET
 

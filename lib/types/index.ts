@@ -100,6 +100,23 @@ export interface DesignParameters {
   specialInstructions: string
 }
 
+// ─── Order Timeline ───────────────────────────────────────────────────────────
+
+export interface TimelineEvent {
+  /** Machine-readable step key, e.g. "order_placed" */
+  status: string
+  /** Human-readable label shown in the timeline */
+  label: string
+  /** Set when the step has been reached; null/undefined if still in the future */
+  timestamp?: Date
+  /** True when this is the step currently being worked on */
+  isActive: boolean
+  /** True when this step has been fully completed */
+  isCompleted: boolean
+  /** Optional detail text rendered below the label */
+  description?: string
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export interface ProviderInfo {
