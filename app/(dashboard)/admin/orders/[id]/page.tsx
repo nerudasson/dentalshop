@@ -25,7 +25,6 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -978,7 +977,7 @@ export default function AdminOrderDetailPage() {
               </div>
               <p className="text-xs text-muted-foreground">
                 This order is under dispute. Review the communication thread and
-                internal notes before taking action. Use "Override Status" to
+                internal notes before taking action. Use &quot;Override Status&quot; to
                 resolve once a decision is reached.
               </p>
             </div>

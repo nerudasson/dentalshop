@@ -622,7 +622,6 @@ export default function ProviderWorkspacePage() {
   const timeline = getProstheticsTimeline(order.status)
   const { text: deadlineText, colorClass: deadlineColor } = deadlineLabel(order.deadlineDate)
 
-  const canSubmit = designFiles.some((f) => f.status === "complete")
   const canSubmitRevised = revisedFiles.some((f) => f.status === "complete")
 
   return (

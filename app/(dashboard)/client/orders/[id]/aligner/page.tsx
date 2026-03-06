@@ -9,7 +9,6 @@ import {
   RotateCcw,
   AlertTriangle,
   Target,
-  Sliders,
   Clock,
   Lock,
   X,

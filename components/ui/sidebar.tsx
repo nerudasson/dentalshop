@@ -238,7 +238,7 @@ interface SidebarMenuButtonProps extends React.HTMLAttributes<HTMLElement> {
 export const SidebarMenuButton = React.forwardRef<
   HTMLElement,
   SidebarMenuButtonProps
->(({ asChild = false, isActive = false, className, children, tooltip, ...props }, ref) => {
+>(({ asChild = false, isActive = false, className, children, tooltip: _tooltip, ...props }, ref) => {
   const Comp = asChild ? Slot : "button"
   return (
     <Comp
