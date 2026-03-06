@@ -56,7 +56,7 @@ Update this section as items are completed:
 - [ ] CategorySelector (`/components/domain/category-selector`)
 - [ ] ToothChart (`/components/domain/tooth-chart`)
 - [x] FileUpload (`/components/domain/file-upload`)
-- [ ] FileDownloadList (`/components/domain/file-download-list`)
+- [x] FileDownloadList (`/components/domain/file-download-list`)
 - [ ] PriceSummary (`/components/domain/price-summary`)
 - [ ] ProviderCard (`/components/domain/provider-card`)
 - [ ] MessageThread (`/components/domain/message-thread`)
@@ -301,6 +301,16 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
   - `showProgress`: renders a per-file progress bar when `file.status === 'uploading'`; real upload wired later
   - Exports: `FileUpload` (default), `FileUploadProps`; types `FileInfo` + `UploadSection` live in `lib/types/index.ts`
   - Demo: `/app/(dashboard)/client/demo-file-upload/page.tsx`
+
+- **FileDownloadList** — `/components/domain/file-download-list.tsx`
+  Client component. Read-only file list with individual download buttons and an optional "Download All as ZIP" action.
+  - Per-file rows: type icon (Box=3D, ImageIcon=images, ScanLine=DCM, FileText=PDF, Archive=ZIP, File=generic), file name, extension badge, human-readable size (`warm-500`), optional upload date
+  - "Download All as ZIP" button (sage-500 filled) rendered in the header when `showDownloadAll` is true; defaults to `files.length > 1`; shows total size
+  - `title` prop adds a named header (e.g. "Design Files", "Scan Files"); without title, the header shows file count
+  - Empty state when `files.length === 0`
+  - Controlled: parent owns download logic via `onDownload(fileId)` and `onDownloadAll()` callbacks
+  - Exports: `FileDownloadList` (default), `FileDownloadListProps`; type `DownloadableFile` lives in `lib/types/index.ts`
+  - Demo: `/app/(dashboard)/client/demo-file-download/page.tsx`
 
 ### Tier 2 (Aligner-Specific) — NONE BUILT YET
 

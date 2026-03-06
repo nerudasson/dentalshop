@@ -81,3 +81,14 @@ export interface UploadSection {
   description?: string
   maxFiles?: number
 }
+
+// ─── File Download ─────────────────────────────────────────────────────────────
+
+export interface DownloadableFile {
+  id: string
+  name: string
+  type: string        // file extension e.g. "stl", "pdf" (with or without leading dot)
+  size: number        // bytes
+  url: string
+  uploadedAt?: Date
+}

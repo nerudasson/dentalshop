@@ -68,6 +68,7 @@ const config: Config = {
           100: "#E1E8DC", // sidebar text / light sage
           400: "#5E8D4F", // hover/drag-over border
           500: "#4A7A3B", // primary brand
+          600: "#3D6932", // hover state for filled/outline buttons
           800: "#1F3319", // sidebar background
         },
         teal: {
@@ -77,6 +78,7 @@ const config: Config = {
           50:  "#FAFAF8",  // page background
           100: "#F0EDE8",  // file row hover bg
           300: "#C8C3BB",  // drop zone dashed border (resting)
+          500: "#8A8480",  // file sizes and secondary meta text
           800: "#2D2A26",  // body text
         },
         // Semantic status colors
