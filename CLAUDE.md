@@ -57,10 +57,10 @@ Update this section as items are completed:
 - [ ] ToothChart (`/components/domain/tooth-chart`)
 - [x] FileUpload (`/components/domain/file-upload`)
 - [ ] FileDownloadList (`/components/domain/file-download-list`)
-- [ ] PriceSummary (`/components/domain/price-summary`)
+- [x] PriceSummary (`/components/domain/price-summary`)
 - [x] ProviderCard (`/components/domain/provider-card`)
 - [ ] MessageThread (`/components/domain/message-thread`)
-- [ ] EscrowBanner (`/components/domain/escrow-banner`)
+- [x] EscrowBanner (`/components/domain/escrow-banner`)
 - [ ] DesignParamsForm (`/components/domain/design-params-form`)
 - [ ] OrderTimeline (`/components/domain/order-timeline`)
 
@@ -321,6 +321,21 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
   - Shows "N providers found" count; empty state with "Clear filters" link
   - Responsive grid: 1 col mobile, 2 col tablet, 3 col desktop
   - Demo: `/app/(dashboard)/client/demo-provider-card/page.tsx`
+
+- **PriceSummary** — `/components/domain/price-summary.tsx`
+  Server component. Cascading price breakdown panel used at checkout and in order summaries.
+  - Line items with optional `isSubItem` indentation for add-on detail rows
+  - Dotted separator before subtotal; bold double-separator before total
+  - `serviceFee` and `vat` lines display percentage inline: "Service Fee (5%)"
+  - All amounts formatted to 2 decimal places via `toFixed(2)` with configurable `currency` symbol (default `€`)
+  - Exports: `PriceSummary` (default), `PriceSummaryProps`, `PriceLineItem`
+
+- **EscrowBanner** — `/components/domain/escrow-banner.tsx`
+  Server component. Contextual buyer-protection banner with three variants.
+  - `payment`: teal50/teal500 border-left, ShieldCheck icon, "Your payment is protected" heading, numbered how-it-works steps
+  - `in_escrow`: teal50/teal500 border-left, Lock icon, "Payment held securely", progress bar showing elapsed days vs 7-day auto-release window; accepts `escrowDaysRemaining`
+  - `released`: sage50/sage500 border-left, CheckCircle2 icon, "Payment released to provider"
+  - Demo: `/app/(dashboard)/client/demo-price-summary/page.tsx`
 
 ### Tier 2 (Aligner-Specific) — NONE BUILT YET
 
