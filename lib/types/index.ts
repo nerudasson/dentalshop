@@ -143,6 +143,58 @@ export interface TimelineEvent {
   description?: string
 }
 
+// ─── Staged File Download ─────────────────────────────────────────────────────
+
+export interface StageFile {
+  id: string
+  stageNumber: number
+  /** e.g. "Stage_01_Upper.stl" */
+  fileName: string
+  fileSize: number
+  url: string
+}
+
+export type SupportingDocType =
+  | 'movement_table'
+  | 'ipr_protocol'
+  | 'attachment_guide'
+  | 'treatment_summary'
+  | 'other'
+
+export interface SupportingDoc {
+  id: string
+  name: string
+  type: SupportingDocType
+  fileSize: number
+  url: string
+}
+
+export interface AlignerDeliverables {
+  upperArchFiles: StageFile[]
+  lowerArchFiles: StageFile[]
+  supportingDocuments: SupportingDoc[]
+  /** Sum of all file sizes in bytes */
+  totalSize: number
+  /** Total number of aligner stages (e.g. 22) */
+  totalStages: number
+}
+
+// ─── Simulation Viewer ────────────────────────────────────────────────────────
+
+export interface SimulationVersion {
+  url: string
+  submittedAt: Date
+  version: number
+}
+
+export interface TreatmentSummary {
+  totalStages: number
+  estimatedDuration: string
+  iprRequired: boolean
+  upperArchStages?: number
+  lowerArchStages?: number
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export interface ProviderInfo {
