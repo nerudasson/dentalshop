@@ -10,8 +10,6 @@ import {
   Users,
   Building2,
   Clock,
-  Star,
-  AlertTriangle,
   ChevronRight,
   Settings,
   UserCheck,

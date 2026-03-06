@@ -3,7 +3,6 @@
 import { useState, type ChangeEvent, type Dispatch, type SetStateAction } from "react"
 import { useRouter } from "next/navigation"
 import {
-  Upload,
   X,
   Plus,
   Trash2,
@@ -11,8 +10,6 @@ import {
   Package,
   Clock,
   Tag,
-  Star,
-  FileText,
   Layers,
   Grid3X3,
   Square,
@@ -25,7 +22,6 @@ import {
 import WizardLayout, { WizardStep } from "@/components/layout/wizard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
