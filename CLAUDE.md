@@ -51,14 +51,14 @@ Update this section as items are completed:
 
 #### Tier 2 — Shared Domain Components
 - [ ] DataTable (`/components/ui/data-table`)
-- [ ] StarRating (`/components/ui/star-rating`)
+- [x] StarRating (`/components/ui/star-rating`)
 - [ ] OrderStatusBadge (`/components/ui/order-status-badge`)
 - [ ] CategorySelector (`/components/domain/category-selector`)
 - [ ] ToothChart (`/components/domain/tooth-chart`)
 - [x] FileUpload (`/components/domain/file-upload`)
 - [ ] FileDownloadList (`/components/domain/file-download-list`)
 - [ ] PriceSummary (`/components/domain/price-summary`)
-- [ ] ProviderCard (`/components/domain/provider-card`)
+- [x] ProviderCard (`/components/domain/provider-card`)
 - [ ] MessageThread (`/components/domain/message-thread`)
 - [ ] EscrowBanner (`/components/domain/escrow-banner`)
 - [ ] DesignParamsForm (`/components/domain/design-params-form`)
@@ -301,6 +301,26 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
   - `showProgress`: renders a per-file progress bar when `file.status === 'uploading'`; real upload wired later
   - Exports: `FileUpload` (default), `FileUploadProps`; types `FileInfo` + `UploadSection` live in `lib/types/index.ts`
   - Demo: `/app/(dashboard)/client/demo-file-upload/page.tsx`
+
+- **StarRating** — `/components/ui/star-rating.tsx`
+  Server-safe display component. Renders 1–5 stars with decimal support via SVG gradient for partial fills.
+  Props: `rating: number`, `max?: number` (default 5), `className?`, `starClassName?`
+
+- **ProviderCard** — `/components/domain/provider-card.tsx`
+  Client component. Card for a single design provider used in order creation step 3.
+  - Shows logo/avatar (initials fallback), name, location, star rating, review count, turnaround, software pills, completed designs, and price
+  - `isSelected` state: sage500 border + sage50 background + checkmark on button
+  - Optional `badges` prop for pills like "Top Rated", "Aligner Specialist"
+  - `showPrice` (default true) controls price display
+  - Exports: `ProviderCard` (default), `ProviderCardProps`; `ProviderInfo` type lives in `lib/types/index.ts`
+
+- **ProviderList** — `/components/domain/provider-list.tsx`
+  Client component. Wraps multiple `ProviderCard` instances with sort + filter controls.
+  - Sort by: best rated, lowest price, fastest turnaround
+  - Filter by: software (pill toggle), max turnaround days (select)
+  - Shows "N providers found" count; empty state with "Clear filters" link
+  - Responsive grid: 1 col mobile, 2 col tablet, 3 col desktop
+  - Demo: `/app/(dashboard)/client/demo-provider-card/page.tsx`
 
 ### Tier 2 (Aligner-Specific) — NONE BUILT YET
 

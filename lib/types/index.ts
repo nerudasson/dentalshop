@@ -81,3 +81,19 @@ export interface UploadSection {
   description?: string
   maxFiles?: number
 }
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
+export interface ProviderInfo {
+  id: string
+  name: string
+  logo?: string           // URL; falls back to initials if absent
+  rating: number          // 1–5
+  reviewCount: number
+  completedDesigns: number
+  turnaroundDays: number  // e.g. 3 → displayed as "3 days"
+  software: string[]      // e.g. ["exocad", "3Shape"] or ["SureSmile", "Archform"]
+  price: number
+  currency: string        // e.g. "EUR", "USD"
+  location: string
+}
