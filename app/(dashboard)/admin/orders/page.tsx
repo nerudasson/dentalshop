@@ -56,16 +56,6 @@ const ACTIVE_STATUSES: OrderStatus[] = [
   "DISPUTED",
 ]
 
-const ALL_STATUSES: OrderStatus[] = [
-  "PENDING_PAYMENT",
-  "PAID",
-  "IN_PROGRESS",
-  "REVISION_REQUESTED",
-  "REVIEW",
-  "COMPLETE",
-  "DISPUTED",
-  "RESOLVED",
-]
 
 function getOrderTypeBadge(type: AdminOrder["orderType"]) {
   if (type === "aligner") {

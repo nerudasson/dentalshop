@@ -125,8 +125,8 @@ export default function DemoSimulationViewerPage() {
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Large embedded iframe with treatment summary panel and version
-            history dropdown. Includes embed / link-only toggle and an "Open in
-            new tab" button.
+            history dropdown. Includes embed / link-only toggle and an &quot;Open in
+            new tab&quot; button.
           </p>
         </div>
 

@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react"
 import { BookmarkCheck, RotateCcw, Info } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -79,8 +78,6 @@ interface MmInputProps {
 
 function MmInput({ value, onChange, onBlur, disabled, placeholder }: MmInputProps) {
   // Show numeric string in the input, append "mm" on blur
-  const numericDisplay = value ? parseMm(value).toString() : ""
-
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value
     // Allow partial entry (e.g. "0." while typing)

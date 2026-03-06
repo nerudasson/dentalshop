@@ -186,7 +186,7 @@ interface AlignerReviewStepProps {
 function AlignerReviewStep({ state, selectedProvider }: AlignerReviewStepProps) {
   const { config } = { config: state.alignerConfig }
   const baseArchPrice = selectedProvider?.price ?? 85
-  const { archCount, archTotal, complexityPremium, designPrice, serviceFeeAmount, vatAmount, total } =
+  const { archCount, complexityPremium, designPrice, serviceFeeAmount, vatAmount, total } =
     calculateAlignerPrice(config, baseArchPrice)
 
   const goalLabels = config.treatmentGoals.join(", ") || "—"
