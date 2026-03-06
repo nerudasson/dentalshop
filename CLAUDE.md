@@ -67,7 +67,7 @@ Update this section as items are completed:
 #### Tier 2 — Aligner-Specific Components
 - [x] AlignerConfigForm (`/components/domain/aligner-config-form`)
 - [x] SimulationViewer (`/components/domain/simulation-viewer`)
-- [ ] StagedFileDownload (`/components/domain/staged-file-download`)
+- [x] StagedFileDownload (`/components/domain/staged-file-download`)
 
 #### Tier 3 — Pages (Client flow — prosthetics)
 - [ ] Client dashboard
@@ -395,6 +395,17 @@ DRAFT → PENDING_PAYMENT → PAID → IN_PROGRESS → REVIEW → COMPLETE
   - `SimulationVersion` and `TreatmentSummary` types live in `lib/types/index.ts`
   - Default export: `ClientSimulationViewer`
   - Demo: `/app/(dashboard)/client/demo-simulation-viewer/page.tsx`
+
+- **StagedFileDownload** — `/components/domain/staged-file-download.tsx`
+  Client component. Structured aligner deliverables viewer replacing a flat file list for orders with 50+ STL files. Groups files by arch and stage.
+  - **Top bar:** "Download All as ZIP" button (sage500 filled) showing total file count + total size
+  - **Folder structure preview:** collapsible tree (monospace) showing the exact ZIP folder layout — `/Upper_Arch/`, `/Lower_Arch/`, `/Supporting_Documents/` — with first 3 filenames per section and a "+N more" overflow indicator
+  - **Upper Arch section:** collapsible (default open) with folder icon, "N stages" count, per-file rows (STL icon, name, size, sage outline DL button), "Download Upper Arch" section button
+  - **Lower Arch section:** same structure; hidden entirely when `lowerArchFiles` is empty (upper-only cases)
+  - **Supporting Documents section:** collapsible; each doc shows document icon, name, type label (`DOC_TYPE_LABELS`), size, and sage outline Download button
+  - Sections omitted when their array is empty
+  - `StageFile`, `SupportingDoc`, `SupportingDocType`, `AlignerDeliverables` types live in `lib/types/index.ts`
+  - Demo: `/app/(dashboard)/client/demo-staged-file-download/page.tsx` — Scenario A: 22+22 bilateral; Scenario B: 14-stage upper-only
 
 ### Tier 3 (Pages)
 
