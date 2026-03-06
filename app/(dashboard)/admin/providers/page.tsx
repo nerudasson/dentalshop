@@ -13,11 +13,7 @@ import {
   Users,
   Star,
   ExternalLink,
-  Building2,
-  Package,
-  ShoppingCart,
   AlertTriangle,
-  ChevronRight,
   Mail,
   MapPin,
 } from "lucide-react"
@@ -494,8 +490,8 @@ function hasActiveFilters(f: FilterState): boolean {
 // ─── Derived stats ────────────────────────────────────────────────────────────
 
 const total = ADMIN_PROVIDERS.length
-const active = ADMIN_PROVIDERS.filter((p) => p.status === "active").length
-const pending = ADMIN_PROVIDERS.filter((p) => p.status === "pending").length
+const _active = ADMIN_PROVIDERS.filter((p) => p.status === "active").length
+const _pending = ADMIN_PROVIDERS.filter((p) => p.status === "pending").length
 const suspended = ADMIN_PROVIDERS.filter((p) => p.status === "suspended").length
 
 // ─── Main page ────────────────────────────────────────────────────────────────
