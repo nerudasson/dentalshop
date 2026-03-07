@@ -50,7 +50,7 @@ Update this section as items are completed:
 - [x] WizardLayout (`/components/layout/wizard-layout`)
 
 #### Tier 2 — Shared Domain Components
-- [ ] DataTable (`/components/ui/data-table`)
+- [x] DataTable (`/components/ui/data-table`)
 - [x] StarRating (`/components/ui/star-rating`)
 - [x] OrderStatusBadge (`/components/ui/order-status-badge`)
 - [x] CategorySelector (`/components/domain/category-selector`)
