@@ -84,15 +84,15 @@ Update this section as items are completed:
 - [x] Order queue
 - [x] Products listing
 - [x] Provider workspace (prosthetics)
-- [ ] Provider workspace (aligner)
+- [x] Provider workspace (aligner)
 - [ ] Reviews
 
 #### Tier 3 — Pages (Admin flow)
 - [x] Admin dashboard
 - [x] Orders management
 - [x] Providers management
-- [ ] Fee configuration
-- [ ] Metrics overview
+- [x] Fee configuration
+- [x] Metrics overview
 
 #### Backend
 - [ ] Prisma schema (`/prisma/schema.prisma`)
