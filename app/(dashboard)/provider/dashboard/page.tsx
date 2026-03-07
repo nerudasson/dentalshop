@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import {
-  Bell,
   CheckCircle2,
   Clock,
   CreditCard,
@@ -10,14 +9,10 @@ import {
   Eye,
   Inbox,
   ListChecks,
-  MessageSquare,
   Package,
-  Play,
   RotateCcw,
   Star,
   TrendingUp,
-  Wallet,
-  Zap,
 } from "lucide-react"
 import {
   BarChart,
@@ -28,7 +23,6 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import OrderStatusBadge from "@/components/ui/order-status-badge"
 import StarRating from "@/components/ui/star-rating"
 import { useRole } from "@/components/providers/role-provider"
@@ -398,8 +392,8 @@ export default function ProviderDashboardPage() {
                   tickFormatter={(v: number) => `€${v}`}
                 />
                 <Tooltip
-                  formatter={(value: number) => [
-                    `€${value.toLocaleString("en", { minimumFractionDigits: 0 })}`,
+                  formatter={(value) => [
+                    `€${Number(value).toLocaleString("en", { minimumFractionDigits: 0 })}`,
                     "Earnings",
                   ]}
                   contentStyle={{

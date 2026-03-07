@@ -50,7 +50,7 @@ Update this section as items are completed:
 - [x] WizardLayout (`/components/layout/wizard-layout`)
 
 #### Tier 2 — Shared Domain Components
-- [ ] DataTable (`/components/ui/data-table`)
+- [x] DataTable (`/components/ui/data-table`)
 - [x] StarRating (`/components/ui/star-rating`)
 - [x] OrderStatusBadge (`/components/ui/order-status-badge`)
 - [x] CategorySelector (`/components/domain/category-selector`)
@@ -80,12 +80,12 @@ Update this section as items are completed:
 - [x] Order detail / client workspace (aligner)
 
 #### Tier 3 — Pages (Provider flow)
-- [ ] Provider dashboard
+- [x] Provider dashboard
 - [x] Order queue
 - [x] Products listing
 - [x] Provider workspace (prosthetics)
 - [x] Provider workspace (aligner)
-- [ ] Reviews
+- [x] Reviews
 
 #### Tier 3 — Pages (Admin flow)
 - [x] Admin dashboard

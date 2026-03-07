@@ -13,7 +13,6 @@ import {
   Info,
   History,
   ChevronDown,
-  RotateCcw,
   FileText,
   Camera,
   Paperclip,
@@ -673,6 +672,7 @@ function TreatmentPlanningSection({
 
 // ─── Deliverables upload section ──────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function DeliverablesUploadSection() {
   const [upperFiles, setUpperFiles] = useState<FileInfo[]>([])
   const [lowerFiles, setLowerFiles] = useState<FileInfo[]>([])
@@ -877,7 +877,7 @@ export default function ProviderAlignerWorkspacePage() {
 
   // Show deliverables section after REVIEW (i.e. plan is approved in a real flow)
   // For demo, show it only in the "review" scenario as a preview toggle
-  const showDeliverables = false // toggled by a demo button below
+  const _showDeliverables = false // toggled by a demo button below
 
   return (
     <div className="min-h-screen bg-warm-50">
