@@ -91,8 +91,8 @@ Update this section as items are completed:
 - [x] Admin dashboard
 - [x] Orders management
 - [x] Providers management
-- [ ] Fee configuration
-- [ ] Metrics overview
+- [x] Fee configuration
+- [x] Metrics overview
 
 #### Backend
 - [ ] Prisma schema (`/prisma/schema.prisma`)
