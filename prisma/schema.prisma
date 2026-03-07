@@ -1,0 +1,348 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ─────────────────────────────────────────────────────────────────────
+
+enum OrderStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAID
+  IN_PROGRESS
+  REVIEW
+  REVISION_REQUESTED
+  COMPLETE
+  DISPUTED
+  RESOLVED
+}
+
+enum CategoryType {
+  PROSTHETICS
+  ALIGNER
+}
+
+enum TransactionType {
+  CLIENT_PAYMENT
+  PERFORMER_PAYOUT
+  PLATFORM_FEE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum FeeType {
+  CLIENT_FEE
+  PROVIDER_COMMISSION
+}
+
+enum FileSection {
+  SCAN
+  PHOTO
+  DESIGN
+  SUPPLEMENTARY
+  DELIVERABLE
+}
+
+enum WorkStepStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+// ─── User ──────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  messages        Message[]
+  fileAttachments FileAttachment[]
+
+  @@map("users")
+}
+
+// ─── Organization ──────────────────────────────────────────────────────────────
+
+model Organization {
+  id             String  @id @default(cuid())
+  name           String
+  slug           String  @unique
+  isPractice     Boolean @default(false) @map("is_practice")
+  canDesign      Boolean @default(false) @map("can_design")
+  isSuperAdmin   Boolean @default(false) @map("is_super_admin")
+  location       String?
+  contactEmail   String?
+  contactPhone   String?
+
+  // Stripe Connect
+  stripeAccountId     String? @unique @map("stripe_account_id")
+  stripeAccountStatus String? @map("stripe_account_status")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users    User[]
+  products Product[]
+
+  // Orders as client
+  clientOrders   Order[] @relation("ClientOrders")
+  // Orders as provider
+  providerOrders Order[] @relation("ProviderOrders")
+
+  // Work steps assigned to this org
+  workSteps WorkStep[]
+
+  // Reviews written by this org
+  reviewsWritten  Review[] @relation("ReviewerOrg")
+  // Reviews received by this org
+  reviewsReceived Review[] @relation("ProviderOrg")
+
+  // Fee overrides for this org
+  feeOverrides FeeConfiguration[]
+
+  @@map("organizations")
+}
+
+// ─── Product ───────────────────────────────────────────────────────────────────
+
+model Product {
+  id           String       @id @default(cuid())
+  name         String
+  category     String
+  categoryType CategoryType
+  description  String?
+  basePrice    Float
+  turnaroundDays Int        @map("turnaround_days")
+  software     String[]
+  isActive     Boolean      @default(true) @map("is_active")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("products")
+}
+
+// ─── Order ─────────────────────────────────────────────────────────────────────
+
+model Order {
+  id        String      @id @default(cuid())
+  reference String      @unique // e.g. ORD-2024-00142
+  status    OrderStatus @default(DRAFT)
+  categoryType CategoryType @map("category_type")
+
+  // Fee snapshots (locked at creation — never changed retroactively)
+  lockedClientFeePercent       Float @default(5)   @map("locked_client_fee_percent")
+  lockedProviderCommissionPercent Float @default(12.5) @map("locked_provider_commission_percent")
+
+  // Version for optimistic locking
+  version Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  clientOrgId   String
+  clientOrg     Organization @relation("ClientOrders", fields: [clientOrgId], references: [id])
+
+  providerOrgId String?
+  providerOrg   Organization? @relation("ProviderOrders", fields: [providerOrgId], references: [id])
+
+  // selling_org_id always NULL in MVP (no resellers)
+  sellingOrgId String? @map("selling_org_id")
+
+  items        OrderItem[]
+  files        FileAttachment[]
+  transactions Transaction[]
+  messages     Message[]
+  reviews      Review[]
+
+  @@index([clientOrgId])
+  @@index([providerOrgId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// ─── OrderItem ─────────────────────────────────────────────────────────────────
+
+model OrderItem {
+  id       String @id @default(cuid())
+  category String // e.g. "Crowns", "Bridges", "Aligner Design"
+  teeth    Int[]  // FDI notation numbers
+  basePrice Float @map("base_price")
+  quantity  Int   @default(1)
+
+  // JSON fields for flexible config
+  designParams Json? @map("design_params")   // DesignParameters for prosthetics
+  alignerConfig Json? @map("aligner_config") // AlignerConfig for aligner
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  workSteps WorkStep[]
+
+  @@map("order_items")
+}
+
+// ─── WorkStep ──────────────────────────────────────────────────────────────────
+
+model WorkStep {
+  id       String         @id @default(cuid())
+  stepType String         @default("design") @map("step_type")
+  sequence Int            @default(1)
+  status   WorkStepStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  assignedOrgId String? @map("assigned_org_id")
+  assignedOrg   Organization? @relation(fields: [assignedOrgId], references: [id])
+
+  @@map("work_steps")
+}
+
+// ─── FileAttachment ────────────────────────────────────────────────────────────
+
+model FileAttachment {
+  id       String      @id @default(cuid())
+  fileName String      @map("file_name")
+  fileKey  String      @unique @map("file_key") // S3/R2 object key
+  fileSize Int         @map("file_size")        // bytes
+  mimeType String      @map("mime_type")
+  section  FileSection
+
+  createdAt DateTime @default(now())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  uploadedByUserId String?        @map("uploaded_by_user_id")
+  uploadedBy       User?          @relation(fields: [uploadedByUserId], references: [id])
+
+  @@index([orderId, section])
+  @@map("file_attachments")
+}
+
+// ─── Transaction ───────────────────────────────────────────────────────────────
+
+model Transaction {
+  id     String            @id @default(cuid())
+  type   TransactionType
+  amount Float
+  currency String          @default("EUR")
+  status TransactionStatus @default(PENDING)
+
+  stripePaymentIntentId String? @unique @map("stripe_payment_intent_id")
+  stripeTransferId      String? @unique @map("stripe_transfer_id")
+
+  // For webhook idempotency
+  stripeEventId String? @unique @map("stripe_event_id")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("transactions")
+}
+
+// ─── FeeConfiguration ──────────────────────────────────────────────────────────
+
+model FeeConfiguration {
+  id         String  @id @default(cuid())
+  feeType    FeeType @map("fee_type")
+  percentage Float               // e.g. 5.0 for 5%
+  serviceType String?  @map("service_type") // null = global default, "prosthetics" or "aligner" for type-specific
+  isActive   Boolean @default(true) @map("is_active")
+
+  // Org-level override (null = global)
+  organizationId String? @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([feeType, serviceType, organizationId])
+  @@map("fee_configurations")
+}
+
+// ─── Review ────────────────────────────────────────────────────────────────────
+
+model Review {
+  id      String @id @default(cuid())
+  rating  Int                    // 1–5
+  comment String?
+  response String?              // Provider response
+
+  createdAt  DateTime @default(now())
+  respondedAt DateTime?         @map("responded_at")
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  reviewerOrgId String
+  reviewerOrg   Organization @relation("ReviewerOrg", fields: [reviewerOrgId], references: [id])
+
+  providerOrgId String
+  providerOrg   Organization @relation("ProviderOrg", fields: [providerOrgId], references: [id])
+
+  @@unique([orderId]) // one review per order
+  @@map("reviews")
+}
+
+// ─── Message ───────────────────────────────────────────────────────────────────
+
+model Message {
+  id         String   @id @default(cuid())
+  content    String
+  senderName String   @map("sender_name")
+  senderRole String   @map("sender_role") // "client" | "provider" | "admin"
+
+  createdAt DateTime @default(now())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  senderUserId String    @map("sender_user_id")
+  sender       User      @relation(fields: [senderUserId], references: [id])
+
+  @@index([orderId, createdAt])
+  @@map("messages")
+}
+
+// ─── RoutingRule (exists but empty in MVP) ──────────────────────────────────────
+
+model RoutingRule {
+  id        String   @id @default(cuid())
+  name      String
+  criteria  Json     // future: matching rules
+  priority  Int      @default(0)
+  isActive  Boolean  @default(false) @map("is_active")
+  createdAt DateTime @default(now())
+
+  @@map("routing_rules")
+}
