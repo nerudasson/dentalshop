@@ -84,7 +84,7 @@ Update this section as items are completed:
 - [x] Order queue
 - [x] Products listing
 - [x] Provider workspace (prosthetics)
-- [ ] Provider workspace (aligner)
+- [x] Provider workspace (aligner)
 - [ ] Reviews
 
 #### Tier 3 — Pages (Admin flow)
