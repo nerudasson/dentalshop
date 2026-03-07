@@ -28,7 +28,6 @@ import {
   Cell,
 } from "recharts"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import StarRating from "@/components/ui/star-rating"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -453,9 +452,8 @@ export default function AdminMetricsPage() {
                 tickFormatter={(v: number) => `€${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip
-                formatter={(value: number, name: string) => [
-                  `€${value.toLocaleString("en")}`,
-                  name === "gmv" ? "GMV" : "Platform Fee",
+                formatter={(value) => [
+                  `€${Number(value).toLocaleString("en")}`,
                 ]}
                 contentStyle={{
                   borderRadius: 8,
@@ -599,7 +597,7 @@ export default function AdminMetricsPage() {
                 width={130}
               />
               <Tooltip
-                formatter={(value: number) => [`€${value.toLocaleString("en")}`, "GMV"]}
+                formatter={(value) => [`€${Number(value).toLocaleString("en")}`, "GMV"]}
                 contentStyle={{
                   borderRadius: 8,
                   fontSize: 12,
