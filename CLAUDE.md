@@ -667,6 +667,11 @@ const DUMMY_ORDERS: Order[] = [
 - Use Tailwind responsive prefixes: `sm:`, `md:`, `lg:`
 - Test at 375px (mobile), 768px (tablet), 1280px (desktop)
 
+### Build & lint rules
+- **No unused imports or variables** — never leave unused imports, destructured variables, or module-level constants in committed code. Remove them or prefix intentionally unused parameters with `_` (e.g. `_reason: string`).
+- **Do not modify `tsconfig.json` target** — it is set to `"es2017"`. Do not lower it or remove it.
+- **Run `npm run build` before considering a task complete** — the Vercel deploy runs `next build` which includes both TypeScript type-checking and ESLint. A successful local build catches deployment failures early.
+
 ---
 
 ## Build Order (Reference)
