@@ -80,12 +80,12 @@ Update this section as items are completed:
 - [x] Order detail / client workspace (aligner)
 
 #### Tier 3 — Pages (Provider flow)
-- [ ] Provider dashboard
+- [x] Provider dashboard
 - [x] Order queue
 - [x] Products listing
 - [x] Provider workspace (prosthetics)
 - [x] Provider workspace (aligner)
-- [ ] Reviews
+- [x] Reviews
 
 #### Tier 3 — Pages (Admin flow)
 - [x] Admin dashboard
