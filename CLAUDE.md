@@ -101,6 +101,160 @@ Update this section as items are completed:
 - [ ] Zod validation schemas (`/lib/validations/*`)
 - [ ] Replace all dummy data with real DB queries
 
+#### Integrations
+- [ ] Clerk Auth integrated
+- [ ] Stripe Connect configured
+- [ ] S3/R2 file storage configured
+- [ ] Transactional email configured
+
+#### Testing
+- [x] Vitest + Testing Library configured
+- [x] Unit tests for core components (46 tests)
+- [ ] E2E tests (Playwright)
+
+---
+
+## MVP Completion Roadmap
+
+> Implementation plan for completing the MVP. Update status markers as phases are completed.
+
+### Phase 1: Frontend-Audit, Build-Fix & Test-Setup — ✅ DONE
+
+- Build verified, lint errors fixed (unused imports, Recharts type issues)
+- DataTable component built (`/components/ui/data-table.tsx`)
+- Vitest + Testing Library configured
+- 46 unit tests written (RoleProvider, OrderStatusBadge, StarRating, PriceSummary, CategorySelector, EscrowBanner, OrderTimeline)
+
+### Phase 2: Database & Backend — 🔲 NEXT
+
+**2.1 Prisma Setup**
+- `npm install prisma @prisma/client`
+- `npx prisma init` → `/prisma/schema.prisma` + `.env` with DATABASE_URL
+- `/lib/db/index.ts` — Prisma Client Singleton (hot-reload safe)
+
+**2.2 Prisma Schema** (`/prisma/schema.prisma`)
+
+| Model | Key Fields | Relations |
+|-------|-----------|-----------|
+| `User` | id, clerkId, email, name, avatarUrl | → Organization |
+| `Organization` | id, name, slug, is_practice, can_design, is_super_admin, stripeAccountId | → Users, Orders, Products |
+| `Product` | id, orgId, name, category, categoryType, basePrice, turnaroundDays, software[] | → Organization |
+| `Order` | id, reference, status, categoryType, clientOrgId, providerOrgId, lockedClientFee, lockedProviderCommission | → OrderItems, Files, Transactions, Messages, Reviews |
+| `OrderItem` | id, orderId, category, teeth[], designParams (Json?), alignerConfig (Json?) | → Order, WorkStep |
+| `WorkStep` | id, orderItemId, stepType="design", sequence=1, status | → OrderItem |
+| `FileAttachment` | id, orderId, fileName, fileKey, fileSize, mimeType, section | → Order |
+| `Transaction` | id, orderId, type (CLIENT_PAYMENT/PERFORMER_PAYOUT/PLATFORM_FEE), amount, stripePaymentIntentId? | → Order |
+| `FeeConfiguration` | id, feeType (CLIENT_FEE/PROVIDER_COMMISSION), percentage, serviceType?, orgId? | — |
+| `Review` | id, orderId, rating, comment, response? | → Order |
+| `Message` | id, orderId, senderUserId, senderName, senderRole, content | → Order |
+
+Enums: `OrderStatus` (9), `CategoryType` (PROSTHETICS/ALIGNER), `TransactionType`, `FeeType`, `FileSection` (SCAN/PHOTO/DESIGN/SUPPLEMENTARY/DELIVERABLE)
+
+**2.3 Migration & Seed**
+- `npx prisma migrate dev --name init`
+- `/prisma/seed.ts` — 2 client orgs, 2 provider orgs, 1 admin, 10 orders, fee configs, reviews, messages
+
+**2.4 Zod Validation Schemas** (`/lib/validations/`)
+- `orders.ts` — createProstheticsOrderSchema, createAlignerOrderSchema, updateOrderStatusSchema
+- `products.ts` — createProductSchema, updateProductSchema
+- `fees.ts` — updateFeeSchema
+- `reviews.ts` — createReviewSchema, respondToReviewSchema
+- `messages.ts` — sendMessageSchema
+
+**2.5 Server Actions** (`/lib/actions/`)
+- `orders.ts` — createOrder, getOrders, getOrderById, updateOrderStatus, requestRevision, approveDesign
+- `products.ts` — getProducts, createProduct, updateProduct, toggleProductStatus
+- `providers.ts` — getProviders, getProviderById, updateProviderProfile
+- `files.ts` — createFileRecord, getFilesByOrder, deleteFile
+- `reviews.ts` — createReview, respondToReview, getReviewsByProvider
+- `fees.ts` — getFeeConfigs, updateFeeConfig, calculateFees
+- `messages.ts` — getMessages, sendMessage
+- `admin.ts` — getAdminStats, getAllOrders, resolveDispute, updateProviderStatus
+
+**2.6 Replace dummy data**
+- React Query Provider (`/components/providers/query-provider.tsx`)
+- All 20 pages: dummy data → Server Actions / React Query
+- Add Loading/Error/Empty states per page
+
+### Phase 3: Authentication (Clerk) — 🔲
+
+- `npm install @clerk/nextjs svix`
+- `/middleware.ts` — Clerk auth middleware (public: sign-in, sign-up, webhooks)
+- `/app/layout.tsx` — wrap with `<ClerkProvider>`
+- Auth pages: `<SignIn />`, `<SignUp />` components
+- RoleProvider: replace dummy profiles with `useUser()` + `useOrganization()`
+- Clerk Webhook (`/app/api/webhooks/clerk/route.ts`): user.created → DB, org.created → DB
+- Secure all Server Actions with `auth()` checks + role-based access
+
+### Phase 4: Payments (Stripe Connect) — 🔲 (parallel with Phase 5)
+
+- `npm install stripe @stripe/stripe-js`
+- `/lib/stripe.ts` — Stripe server client singleton
+- Provider onboarding: `createConnectAccount`, `createAccountLink`, `getAccountStatus`
+- Checkout: `createCheckoutSession` with `capture_method: 'manual'` for escrow
+- Capture + Transfer: `capturePayment` → `createTransfer` (minus commission)
+- Fee calculation (`/lib/utils/fees.ts`): cascade org-override > service-type > global default, fee snapshot at order creation
+- Stripe Webhook (`/app/api/webhooks/stripe/route.ts`): checkout.session.completed, payment_intent.captured, account.updated
+- Tests: fee calculation, webhook handlers
+
+### Phase 5: File Storage (S3/R2) — 🔲 (parallel with Phase 4)
+
+- `npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner`
+- `/lib/storage.ts` — S3 client (R2-compatible via endpoint override)
+- Upload: `getPresignedUploadUrl`, `confirmUpload` → FileAttachment record
+- Download: `getPresignedDownloadUrl` (15min expiry), ZIP generation
+- Extend `FileUpload` component: real upload via pre-signed URL with progress
+- Extend `FileDownloadList` + `StagedFileDownload`: real download URLs
+- Key schema: `{orgId}/{orderId}/{section}/{uuid}-{originalName}`
+
+### Phase 6: Transactional Emails — 🔲
+
+- `npm install resend react-email @react-email/components`
+- `/lib/email.ts` — Resend client
+- Templates (`/lib/emails/templates/`): order-confirmation, new-order-notification, design-submitted, revision-requested, order-approved, order-completed, payment-released, review-received, dispute-opened, welcome
+- Email service (`/lib/actions/emails.ts`): `sendOrderEmail(template, orderId)`
+- Integrate into existing Server Actions (e.g. `updateOrderStatus` → trigger email)
+
+### Phase 7: E2E Tests & Polish — 🔲
+
+- `npm install -D @playwright/test` + `npx playwright install`
+- E2E flows: full prosthetics order lifecycle, aligner lifecycle, admin management, dispute resolution
+- Error handling: optimistic locking, webhook idempotency, server-side file validation
+- Polish: loading skeletons, optimistic UI, `.env.example`, error boundaries (`error.tsx`, `not-found.tsx`)
+
+### Phase Dependencies
+
+```
+Phase 1 (Frontend + Tests)       ✅ DONE
+    ↓
+Phase 2 (Database + Backend)     ← prerequisite for everything below
+    ↓
+Phase 3 (Clerk Auth)             ← needs DB for user/org sync
+    ↓
+  ┌─┴─┐
+Phase 4    Phase 5               ← can run in parallel
+(Stripe)   (Storage)
+  └─┬─┘
+    ↓
+Phase 6 (Emails)                 ← needs all above for triggers
+    ↓
+Phase 7 (E2E + Polish)           ← tests the full system
+```
+
+### Verification (per phase)
+
+1. `npm run build` — no errors
+2. `npm run test` — all unit tests green
+3. Manual check in browser (3 roles via DevRoleSwitcher)
+
+### Final verification
+
+1. `npx playwright test` — all E2E flows green
+2. Full prosthetics + aligner lifecycle manually
+3. Stripe test-mode payments
+4. File upload/download with real R2 bucket
+5. Emails verified in Resend dashboard
+
 ---
 
 ## Project Initialization (First-Time Setup)
