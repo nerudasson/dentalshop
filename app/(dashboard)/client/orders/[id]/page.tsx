@@ -11,6 +11,10 @@ import {
   RotateCcw,
   AlertTriangle,
   History,
+  Shield,
+  Lock,
+  Download,
+  X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -18,7 +22,6 @@ import { Badge } from "@/components/ui/badge"
 import OrderStatusBadge from "@/components/ui/order-status-badge"
 import StarRating from "@/components/ui/star-rating"
 import PriceSummary from "@/components/domain/price-summary"
-import EscrowBanner from "@/components/domain/escrow-banner"
 import OrderTimeline, { getProstheticsTimeline } from "@/components/domain/order-timeline"
 import FileDownloadList from "@/components/domain/file-download-list"
 import MessageThread, { type ThreadMessage } from "@/components/domain/message-thread"
@@ -152,12 +155,6 @@ function getStatusCallout(status: OrderStatus): { icon: React.ReactNode; text: s
     }
   }
   return null
-}
-
-function getEscrowVariant(status: OrderStatus): "payment" | "in_escrow" | "released" {
-  if (["COMPLETE", "RESOLVED"].includes(status)) return "released"
-  if (["PAID", "IN_PROGRESS", "REVIEW", "REVISION_REQUESTED", "DISPUTED"].includes(status)) return "in_escrow"
-  return "payment"
 }
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
@@ -299,14 +296,112 @@ function RevisionHistory({
   )
 }
 
+// ─── Approval confirmation dialog ─────────────────────────────────────────────
+
+function ApprovalConfirmationDialog({
+  providerName,
+  totalAmount,
+  providerNet,
+  onConfirm,
+  onCancel,
+}: {
+  providerName: string
+  totalAmount: number
+  providerNet: number
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onCancel}
+        aria-hidden="true"
+      />
+
+      {/* Dialog */}
+      <div className="relative w-full max-w-md rounded-xl border border-border bg-white shadow-xl">
+        {/* Header */}
+        <div className="flex items-start justify-between border-b border-border px-6 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sage-100">
+              <Shield className="h-4 w-4 text-sage-600" />
+            </div>
+            <h2 className="text-base font-semibold text-warm-800">
+              Approve Design &amp; Release Payment
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="ml-4 rounded-md p-1 text-muted-foreground hover:text-warm-800 focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-5">
+          <p className="text-sm text-warm-800 font-medium">By approving this design, you confirm:</p>
+
+          {/* Checklist */}
+          <ul className="space-y-3">
+            {[
+              "The design files meet your requirements",
+              "You authorize the release of payment to the provider",
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2.5">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-sage-500" />
+                <span className="text-sm text-warm-800">{item}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Amount */}
+          <div className="rounded-lg border border-sage-200 bg-sage-50 px-4 py-3">
+            <p className="text-sm font-semibold text-warm-800">
+              €{totalAmount.toFixed(2)} will be released to {providerName}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Provider receives €{providerNet.toFixed(2)} after platform commission
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex flex-col-reverse gap-2 border-t border-border px-6 py-4 sm:flex-row sm:justify-end">
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button
+            className="bg-sage-500 text-white hover:bg-sage-400"
+            onClick={onConfirm}
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Confirm &amp; Release Payment
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Review decision section ──────────────────────────────────────────────────
 
-type DecisionState = "idle" | "revising" | "confirmed_approve" | "confirmed_revise"
+type DecisionState = "idle" | "confirming_approve" | "revising" | "confirmed_approve" | "confirmed_revise"
 
 function ReviewDecisionPanel({
   revisions,
+  providerName,
+  totalAmount,
+  providerNet,
 }: {
   revisions: Array<{ id: string; requestedAt: Date; notes: string }>
+  providerName: string
+  totalAmount: number
+  providerNet: number
 }) {
   const [decision, setDecision] = useState<DecisionState>("idle")
   const [revisionNotes, setRevisionNotes] = useState("")
@@ -340,74 +435,87 @@ function ReviewDecisionPanel({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Instruction */}
-      <div className="flex items-start gap-2 rounded-md bg-warm-50 px-3 py-2.5">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-        <p className="text-sm text-warm-800">
-          Review the design files in your CAD software before making a decision. Approving
-          releases escrow payment to the provider.
-        </p>
-      </div>
-
-      {/* Action buttons */}
-      {decision === "idle" && (
-        <div className="flex flex-wrap gap-3">
-          <Button
-            className="bg-sage-500 text-white hover:bg-sage-400"
-            onClick={() => setDecision("confirmed_approve")}
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Approve Design
-          </Button>
-          <Button variant="outline" onClick={() => setDecision("revising")}>
-            <RotateCcw className="h-4 w-4" />
-            Request Revision
-          </Button>
-        </div>
+    <>
+      {/* Confirmation dialog (rendered in portal-like overlay) */}
+      {decision === "confirming_approve" && (
+        <ApprovalConfirmationDialog
+          providerName={providerName}
+          totalAmount={totalAmount}
+          providerNet={providerNet}
+          onConfirm={() => setDecision("confirmed_approve")}
+          onCancel={() => setDecision("idle")}
+        />
       )}
 
-      {/* Revision notes form */}
-      {decision === "revising" && (
-        <div className="space-y-3 rounded-md border border-orange-200 bg-orange-50 p-4">
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-warm-800">
-              Describe what needs to be changed
-            </span>
-            <textarea
-              value={revisionNotes}
-              onChange={(e) => setRevisionNotes(e.target.value)}
-              placeholder="e.g. The mesial contact on tooth 14 is too light. Please increase to medium strength and adjust the occlusal clearance on tooth 15."
-              rows={4}
-              className="w-full resize-none rounded-md border border-border bg-white px-3 py-2 text-sm text-warm-800 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-          </label>
-          <div className="flex flex-wrap gap-2">
+      <div className="space-y-4">
+        {/* Instruction */}
+        <div className="flex items-start gap-2 rounded-md bg-warm-50 px-3 py-2.5">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+          <p className="text-sm text-warm-800">
+            Review the design files in your CAD software before making a decision. Approving
+            releases escrow payment to the provider.
+          </p>
+        </div>
+
+        {/* Action buttons */}
+        {decision === "idle" && (
+          <div className="flex flex-wrap gap-3">
             <Button
-              size="sm"
-              className="bg-orange-500 text-white hover:bg-orange-400"
-              disabled={!revisionNotes.trim()}
-              onClick={() => setDecision("confirmed_revise")}
+              className="bg-sage-500 text-white hover:bg-sage-400"
+              onClick={() => setDecision("confirming_approve")}
             >
-              Submit Revision Request
+              <CheckCircle2 className="h-4 w-4" />
+              Approve Design
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setDecision("idle")
-                setRevisionNotes("")
-              }}
-            >
-              Cancel
+            <Button variant="outline" onClick={() => setDecision("revising")}>
+              <RotateCcw className="h-4 w-4" />
+              Request Revision
             </Button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Revision history */}
-      <RevisionHistory revisions={revisions} />
-    </div>
+        {/* Revision notes form */}
+        {decision === "revising" && (
+          <div className="space-y-3 rounded-md border border-orange-200 bg-orange-50 p-4">
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-warm-800">
+                Describe what needs to be changed
+              </span>
+              <textarea
+                value={revisionNotes}
+                onChange={(e) => setRevisionNotes(e.target.value)}
+                placeholder="e.g. The mesial contact on tooth 14 is too light. Please increase to medium strength and adjust the occlusal clearance on tooth 15."
+                rows={4}
+                className="w-full resize-none rounded-md border border-border bg-white px-3 py-2 text-sm text-warm-800 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                className="bg-orange-500 text-white hover:bg-orange-400"
+                disabled={!revisionNotes.trim()}
+                onClick={() => setDecision("confirmed_revise")}
+              >
+                Submit Revision Request
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setDecision("idle")
+                  setRevisionNotes("")
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Revision history */}
+        <RevisionHistory revisions={revisions} />
+      </div>
+    </>
   )
 }
 
@@ -470,6 +578,134 @@ function RatingPrompt({ providerName }: { providerName: string }) {
   )
 }
 
+// ─── Escrow status card ───────────────────────────────────────────────────────
+
+type EscrowCardVariant = "secured" | "in_review" | "completed"
+
+function getEscrowCardVariant(status: OrderStatus): EscrowCardVariant {
+  if (["COMPLETE", "RESOLVED"].includes(status)) return "completed"
+  if (status === "REVIEW") return "in_review"
+  return "secured"
+}
+
+function EscrowStatusCard({
+  variant,
+  totalAmount,
+  providerName,
+  escrowDaysRemaining = 12,
+  releasedAt,
+}: {
+  variant: EscrowCardVariant
+  totalAmount: number
+  providerName: string
+  escrowDaysRemaining?: number
+  releasedAt?: Date
+}) {
+  const autoReleaseDays = 14
+  const elapsed = autoReleaseDays - escrowDaysRemaining
+  const progressPct = Math.round((elapsed / autoReleaseDays) * 100)
+  const isWarning = escrowDaysRemaining <= 3
+
+  if (variant === "completed") {
+    const dateStr = releasedAt
+      ? releasedAt.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+      : "recently"
+
+    return (
+      <div className="rounded-lg border border-sage-200 bg-sage-50 p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <CheckCircle2 className="h-4 w-4 text-sage-500 shrink-0" />
+          <span className="text-sm font-semibold text-warm-800">Payment Released</span>
+        </div>
+        <p className="text-lg font-bold text-warm-800">€{totalAmount.toFixed(2)}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">released to {providerName}</p>
+        <p className="text-xs text-muted-foreground mt-1">Released on {dateStr}</p>
+      </div>
+    )
+  }
+
+  if (variant === "in_review") {
+    return (
+      <div className={cn(
+        "rounded-lg border p-4",
+        isWarning ? "border-amber-300 bg-amber-50" : "border-teal-200 bg-teal-50"
+      )}>
+        <div className="flex items-center gap-2 mb-2">
+          <Lock className={cn("h-4 w-4 shrink-0", isWarning ? "text-amber-600" : "text-teal-600")} />
+          <span className="text-sm font-semibold text-warm-800">Payment in Escrow</span>
+        </div>
+        <p className="text-lg font-bold text-warm-800">€{totalAmount.toFixed(2)}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">held securely</p>
+        <p className={cn("text-xs mt-2 font-medium", isWarning ? "text-amber-700" : "text-muted-foreground")}>
+          {isWarning
+            ? `Auto-release in ${escrowDaysRemaining} days`
+            : `Auto-releases in ${escrowDaysRemaining} days if no action taken`}
+        </p>
+        {/* Progress bar */}
+        <div className="mt-2 h-1.5 w-full rounded-full bg-teal-100 overflow-hidden">
+          <div
+            className={cn("h-full rounded-full transition-all", isWarning ? "bg-amber-500" : "bg-teal-500")}
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+        <p className={cn("text-xs mt-1.5 tabular-nums", isWarning ? "text-amber-700 font-medium" : "text-muted-foreground")}>
+          {escrowDaysRemaining} days remaining
+        </p>
+      </div>
+    )
+  }
+
+  // variant === "secured"
+  return (
+    <div className="rounded-lg border border-teal-200 bg-teal-50 p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Shield className="h-4 w-4 text-teal-600 shrink-0" />
+        <span className="text-sm font-semibold text-warm-800">Payment Secured</span>
+      </div>
+      <p className="text-lg font-bold text-warm-800">€{totalAmount.toFixed(2)}</p>
+      <p className="text-xs text-muted-foreground mt-0.5">held in escrow</p>
+      <p className="text-xs text-muted-foreground mt-2">
+        Funds will be released when you approve the design
+      </p>
+    </div>
+  )
+}
+
+// ─── Payment receipt card ─────────────────────────────────────────────────────
+
+function PaymentReceiptCard({
+  totalAmount,
+  providerName,
+  releasedAt,
+}: {
+  totalAmount: number
+  providerName: string
+  releasedAt: Date
+}) {
+  const dateStr = releasedAt.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-md border border-sage-200 bg-sage-50 px-4 py-3">
+      <div className="flex items-start gap-3">
+        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-sage-500" />
+        <div>
+          <p className="text-sm font-medium text-warm-800">
+            Payment of €{totalAmount.toFixed(2)} released to {providerName} on {dateStr}
+          </p>
+        </div>
+      </div>
+      <Button size="sm" variant="outline" className="shrink-0 gap-1.5 text-xs">
+        <Download className="h-3.5 w-3.5" />
+        Download Invoice
+      </Button>
+    </div>
+  )
+}
+
 // ─── Provider sidebar card ────────────────────────────────────────────────────
 
 function ProviderCard({
@@ -527,8 +763,12 @@ export default function OrderDetailPage() {
   const order = DUMMY_ORDER
   const sections = getVisibleSections(order.status)
   const statusCallout = getStatusCallout(order.status)
-  const escrowVariant = getEscrowVariant(order.status)
+  const escrowCardVariant = getEscrowCardVariant(order.status)
   const timeline = getProstheticsTimeline(order.status)
+  // Provider net = design price minus 12.5% platform commission
+  const providerNet = order.pricing.subtotal * 0.875
+  // Dummy released date for COMPLETE status
+  const paymentReleasedAt = new Date("2024-11-22T16:45:00")
 
   const formattedDate = order.placedAt.toLocaleDateString("en-GB", {
     day: "numeric",
@@ -650,14 +890,26 @@ export default function OrderDetailPage() {
             {/* 3 ── Review decision */}
             {sections.showReviewDecision && (
               <Section title="Review Decision">
-                <ReviewDecisionPanel revisions={order.revisions} />
+                <ReviewDecisionPanel
+                  revisions={order.revisions}
+                  providerName={order.provider.name}
+                  totalAmount={order.pricing.total}
+                  providerNet={providerNet}
+                />
               </Section>
             )}
 
             {/* 4 ── Rating prompt (COMPLETE) */}
             {sections.showRatingPrompt && (
               <Section title="Rate Your Provider">
-                <RatingPrompt providerName={order.provider.name} />
+                <div className="space-y-4">
+                  <PaymentReceiptCard
+                    totalAmount={order.pricing.total}
+                    providerName={order.provider.name}
+                    releasedAt={paymentReleasedAt}
+                  />
+                  <RatingPrompt providerName={order.provider.name} />
+                </div>
               </Section>
             )}
 
@@ -700,10 +952,13 @@ export default function OrderDetailPage() {
               />
             </div>
 
-            {/* Escrow banner */}
-            <EscrowBanner
-              variant={escrowVariant}
-              escrowDaysRemaining={escrowVariant === "in_escrow" ? 4 : undefined}
+            {/* Escrow status card */}
+            <EscrowStatusCard
+              variant={escrowCardVariant}
+              totalAmount={order.pricing.total}
+              providerName={order.provider.name}
+              escrowDaysRemaining={escrowCardVariant === "in_review" ? 4 : undefined}
+              releasedAt={escrowCardVariant === "completed" ? paymentReleasedAt : undefined}
             />
 
             {/* Order timeline */}
