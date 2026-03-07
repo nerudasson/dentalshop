@@ -387,8 +387,8 @@ function ActionButton({ order, compact = false }: { order: QueueOrder; compact?:
   const router = useRouter()
   const href =
     order.orderType === "aligner"
-      ? `/provider/workspace/${order.id}/aligner`
-      : `/provider/workspace/${order.id}`
+      ? `/provider/orders/${order.id}/aligner`
+      : `/provider/orders/${order.id}`
   const isStart = order.status === "PAID"
 
   return (
@@ -555,8 +555,8 @@ function OrderCard({ order }: { order: QueueOrder }) {
       onClick={() => {
         const href =
           order.orderType === "aligner"
-            ? `/provider/workspace/${order.id}/aligner`
-            : `/provider/workspace/${order.id}`
+            ? `/provider/orders/${order.id}/aligner`
+            : `/provider/orders/${order.id}`
         router.push(href)
       }}
       className={`rounded-xl border p-4 space-y-3 cursor-pointer transition-colors hover:bg-muted/40 ${
@@ -721,8 +721,8 @@ export default function ProviderQueuePage() {
   function handleRowClick(order: QueueOrder) {
     const href =
       order.orderType === "aligner"
-        ? `/provider/workspace/${order.id}/aligner`
-        : `/provider/workspace/${order.id}`
+        ? `/provider/orders/${order.id}/aligner`
+        : `/provider/orders/${order.id}`
     router.push(href)
   }
 
