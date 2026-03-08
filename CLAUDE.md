@@ -97,8 +97,8 @@ Update this section as items are completed:
 #### Backend
 - [ ] Prisma schema (`/prisma/schema.prisma`)
 - [ ] Prisma migrations
-- [ ] Server Actions (`/lib/actions/*`)
-- [ ] Zod validation schemas (`/lib/validations/*`)
+- [x] Server Actions (`/lib/actions/*`) — orders, products, providers, files, reviews, fees, messages, admin
+- [x] Zod validation schemas (`/lib/validations/*`) — orders, products, fees, reviews, messages
 - [ ] Replace all dummy data with real DB queries
 
 ---
