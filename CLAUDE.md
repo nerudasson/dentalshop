@@ -38,7 +38,7 @@ Update this section as items are completed:
 #### Infrastructure
 - [x] Next.js 14 initialized with TypeScript + Tailwind + App Router
 - [x] shadcn/ui configured (manual component setup — see `components/ui/`)
-- [ ] Prisma configured with PostgreSQL
+- [x] Prisma configured with PostgreSQL
 - [ ] Clerk Auth integrated
 - [ ] Stripe Connect configured
 - [ ] S3/R2 file storage configured
@@ -95,8 +95,8 @@ Update this section as items are completed:
 - [x] Metrics overview
 
 #### Backend
-- [ ] Prisma schema (`/prisma/schema.prisma`)
-- [ ] Prisma migrations
+- [x] Prisma schema (`/prisma/schema.prisma`)
+- [x] Prisma migrations
 - [ ] Server Actions (`/lib/actions/*`)
 - [ ] Zod validation schemas (`/lib/validations/*`)
 - [ ] Replace all dummy data with real DB queries
@@ -125,7 +125,7 @@ Update this section as items are completed:
 - Vitest + Testing Library configured
 - 46 unit tests written (RoleProvider, OrderStatusBadge, StarRating, PriceSummary, CategorySelector, EscrowBanner, OrderTimeline)
 
-### Phase 2: Database & Backend — 🔲 NEXT
+### Phase 2: Database & Backend — 🟡 IN PROGRESS (2.1–2.3 done, 2.4–2.6 remaining)
 
 **2.1 Prisma Setup**
 - `npm install prisma @prisma/client`
