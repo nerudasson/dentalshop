@@ -1,5 +1,6 @@
 'use server'
 
+import { db } from '@/lib/db'
 import type { ProviderInfo } from '@/lib/types'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -35,14 +36,36 @@ export async function getProviders(filters?: {
   maxTurnaroundDays?: number
 }): Promise<ActionResult<ProviderInfo[]>> {
   try {
-    // TODO: Replace with Prisma DB call when database is connected
-    // const providers = await db.organization.findMany({
-    //   where: { can_design: true, isActive: true },
-    //   ...
-    // })
-    console.log('getProviders with filters:', filters)
+    const providers = await db.organization.findMany({
+      where: {
+        canDesign: true,
+        isActive:  true,
+        ...(filters?.maxTurnaroundDays && {
+          turnaroundDays: { lte: filters.maxTurnaroundDays },
+        }),
+        ...(filters?.software?.length && {
+          software: { hasSome: filters.software },
+        }),
+      },
+      orderBy: { averageRating: 'desc' },
+    })
 
-    return { success: true, data: [] }
+    type DbProvider = (typeof providers)[0]
+    const result: ProviderInfo[] = providers.map((p: DbProvider) => ({
+      id:              p.id,
+      name:            p.name,
+      logo:            p.logoUrl ?? undefined,
+      rating:          p.averageRating,
+      reviewCount:     p.reviewCount,
+      completedDesigns: p.completedDesigns,
+      turnaroundDays:  p.turnaroundDays,
+      software:        p.software,
+      price:           0, // product-level, use products query for real price
+      currency:        'EUR',
+      location:        p.location ?? '',
+    }))
+
+    return { success: true, data: result }
   } catch {
     return { success: false, error: 'Failed to fetch providers' }
   }
@@ -54,10 +77,36 @@ export async function getProviderById(
   providerId: string,
 ): Promise<ActionResult<ProviderProfile | null>> {
   try {
-    // TODO: Replace with Prisma DB call when database is connected
-    console.log('getProviderById:', providerId)
+    const p = await db.organization.findUnique({
+      where:   { id: providerId },
+      include: { feeOverrides: { where: { feeType: 'provider_commission', isActive: true } } },
+    })
+    type DbOrg = NonNullable<typeof p>
 
-    return { success: true, data: null }
+    if (!p) return { success: true, data: null }
+
+    return {
+      success: true,
+      data: {
+        orgId:           p.id,
+        id:              p.id,
+        name:            p.name,
+        logo:            p.logoUrl ?? undefined,
+        rating:          p.averageRating,
+        reviewCount:     p.reviewCount,
+        completedDesigns: p.completedDesigns,
+        turnaroundDays:  p.turnaroundDays,
+        software:        p.software,
+        price:           0,
+        currency:        'EUR',
+        location:        p.location ?? '',
+        isActive:        p.isActive,
+        bio:             p.bio ?? undefined,
+        website:         p.website ?? undefined,
+        commissionRate:  p.feeOverrides[0]?.rate ?? 0.125,
+        totalEarnings:   0,
+      },
+    }
   } catch {
     return { success: false, error: 'Failed to fetch provider' }
   }
@@ -70,9 +119,16 @@ export async function updateProviderProfile(
   input: UpdateProviderProfileInput,
 ): Promise<ActionResult<{ orgId: string }>> {
   try {
-    // TODO: Replace with Prisma DB call when database is connected
-    // Validate that the acting user belongs to orgId (auth check)
-    console.log('updateProviderProfile for org:', orgId, 'input:', input)
+    await db.organization.update({
+      where: { id: orgId },
+      data:  {
+        ...(input.bio            !== undefined && { bio: input.bio }),
+        ...(input.website        !== undefined && { website: input.website }),
+        ...(input.location       !== undefined && { location: input.location }),
+        ...(input.software       !== undefined && { software: input.software }),
+        ...(input.turnaroundDays !== undefined && { turnaroundDays: input.turnaroundDays }),
+      },
+    })
 
     return { success: true, data: { orgId } }
   } catch {
@@ -84,11 +140,34 @@ export async function updateProviderProfile(
 
 export async function getAdminProviders(): Promise<ActionResult<ProviderProfile[]>> {
   try {
-    // TODO: Replace with Prisma DB call when database is connected
-    // Admin-only: returns all providers including inactive
-    console.log('getAdminProviders')
+    const providers = await db.organization.findMany({
+      where:   { canDesign: true },
+      include: { feeOverrides: { where: { feeType: 'provider_commission', isActive: true } } },
+      orderBy: { createdAt: 'desc' },
+    })
 
-    return { success: true, data: [] }
+    type DbProviderAdmin = (typeof providers)[0]
+    const result: ProviderProfile[] = providers.map((p: DbProviderAdmin) => ({
+      orgId:           p.id,
+      id:              p.id,
+      name:            p.name,
+      logo:            p.logoUrl ?? undefined,
+      rating:          p.averageRating,
+      reviewCount:     p.reviewCount,
+      completedDesigns: p.completedDesigns,
+      turnaroundDays:  p.turnaroundDays,
+      software:        p.software,
+      price:           0,
+      currency:        'EUR',
+      location:        p.location ?? '',
+      isActive:        p.isActive,
+      bio:             p.bio ?? undefined,
+      website:         p.website ?? undefined,
+      commissionRate:  p.feeOverrides[0]?.rate ?? 0.125,
+      totalEarnings:   0,
+    }))
+
+    return { success: true, data: result }
   } catch {
     return { success: false, error: 'Failed to fetch providers' }
   }
@@ -101,8 +180,10 @@ export async function updateProviderStatus(
   isActive: boolean,
 ): Promise<ActionResult<{ orgId: string }>> {
   try {
-    // TODO: Replace with Prisma DB call when database is connected
-    console.log('updateProviderStatus for org:', orgId, 'isActive:', isActive)
+    await db.organization.update({
+      where: { id: orgId },
+      data:  { isActive },
+    })
 
     return { success: true, data: { orgId } }
   } catch {

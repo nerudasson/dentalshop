@@ -15,6 +15,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import OrderStatusBadge from "@/components/ui/order-status-badge"
+import { useQuery } from "@tanstack/react-query"
+import { useRole } from "@/components/providers/role-provider"
+import { getProviderOrders } from "@/lib/actions/orders"
 import type { OrderStatus } from "@/lib/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -653,6 +656,41 @@ function EmptyQueue({ tab }: { tab: QueueTab }) {
 
 export default function ProviderQueuePage() {
   const router = useRouter()
+  const { orgId } = useRole()
+
+  const { data: result, isLoading } = useQuery({
+    queryKey: ["provider-orders", orgId],
+    queryFn:  () => getProviderOrders(orgId),
+  })
+
+  const ALL_ORDERS: QueueOrder[] = (result?.data ?? []).map((o) => {
+    const now = new Date()
+    const deadline = new Date(o.updatedAt.getTime() + 3 * 24 * 60 * 60 * 1000)
+    const isRecent = (now.getTime() - new Date(o.createdAt).getTime()) < 24 * 60 * 60 * 1000
+    return {
+      id:             o.reference,
+      orderId:        o.id,
+      orderType:      o.categoryType,
+      category:       o.category.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()),
+      clientName:     o.clientOrgId,
+      status:         o.status,
+      deadlineDate:   deadline.toISOString().slice(0, 10),
+      deadlineDisplay: `Due ${deadline.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`,
+      dateReceived:   new Date(o.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+      dateReceivedIso: new Date(o.createdAt).toISOString().slice(0, 10),
+      price:          `€${o.totalAmount.toFixed(2)}`,
+      priceNum:       o.totalAmount,
+      isNew:          isRecent,
+    }
+  })
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
+        Loading queue…
+      </div>
+    )
+  }
 
   const [activeTab, setActiveTab] = useState<QueueTab>("all")
   const [search, setSearch] = useState("")

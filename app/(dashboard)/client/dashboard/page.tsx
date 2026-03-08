@@ -13,7 +13,9 @@ import {
 import { Button } from "@/components/ui/button"
 import OrderStatusBadge from "@/components/ui/order-status-badge"
 import StarRating from "@/components/ui/star-rating"
+import { useQuery } from "@tanstack/react-query"
 import { useRole } from "@/components/providers/role-provider"
+import { getClientOrders } from "@/lib/actions/orders"
 import type { OrderStatus } from "@/lib/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -34,85 +36,6 @@ interface PendingReviewOrder {
   provider: string
   submittedAt: string
   price: string
-}
-
-// ─── Dummy data ───────────────────────────────────────────────────────────────
-
-const RECENT_ORDERS: RecentOrder[] = [
-  {
-    id: "ORD-2024-00142",
-    category: "Crowns",
-    orderType: "prosthetics",
-    provider: "ClearCAD Studio",
-    status: "REVIEW",
-    date: "Mar 1, 2026",
-  },
-  {
-    id: "ORD-2024-00141",
-    category: "Bridges",
-    orderType: "prosthetics",
-    provider: "ProDesign Lab",
-    status: "IN_PROGRESS",
-    date: "Feb 28, 2026",
-  },
-  {
-    id: "ORD-2024-00140",
-    category: "Aligner Design",
-    orderType: "aligner",
-    provider: "ClearSmile Studio",
-    status: "REVIEW",
-    date: "Feb 25, 2026",
-  },
-  {
-    id: "ORD-2024-00139",
-    category: "Veneers",
-    orderType: "prosthetics",
-    provider: "DentalCAD Pro",
-    status: "COMPLETE",
-    date: "Feb 20, 2026",
-  },
-  {
-    id: "ORD-2024-00138",
-    category: "Aligner Design",
-    orderType: "aligner",
-    provider: "AlignTech Design",
-    status: "IN_PROGRESS",
-    date: "Feb 18, 2026",
-  },
-]
-
-const PENDING_REVIEW_ORDERS: PendingReviewOrder[] = [
-  {
-    id: "ORD-2024-00142",
-    category: "Crowns",
-    orderType: "prosthetics",
-    provider: "ClearCAD Studio",
-    submittedAt: "Mar 1, 2026",
-    price: "€312.50",
-  },
-  {
-    id: "ORD-2024-00140",
-    category: "Aligner Design",
-    orderType: "aligner",
-    provider: "ClearSmile Studio",
-    submittedAt: "Feb 25, 2026",
-    price: "€714.00",
-  },
-  {
-    id: "ORD-2024-00136",
-    category: "Inlays / Onlays",
-    orderType: "prosthetics",
-    provider: "MeshForge Studio",
-    submittedAt: "Feb 22, 2026",
-    price: "€226.80",
-  },
-]
-
-const STATS = {
-  activeOrders: 4,
-  pendingReview: 3,
-  completedThisMonth: 2,
-  averageRating: 4.6,
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
@@ -140,8 +63,72 @@ function StatCard({ icon, label, value, sub, iconClass }: StatCardProps) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const ACTIVE_STATUSES: OrderStatus[] = ['PAID', 'IN_PROGRESS', 'REVIEW', 'REVISION_REQUESTED']
+
+function formatCategory(cat: string): string {
+  return cat.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function formatDate(d: Date): string {
+  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function ClientDashboardPage() {
-  const { orgName } = useRole()
+  const { orgName, orgId } = useRole()
+
+  const { data: result, isLoading } = useQuery({
+    queryKey: ['client-orders', orgId],
+    queryFn:  () => getClientOrders(orgId),
+  })
+
+  const orders = result?.data ?? []
+
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const RECENT_ORDERS = orders.slice(0, 5).map((o) => ({
+    id:        o.reference,
+    orderId:   o.id,
+    category:  formatCategory(o.category),
+    orderType: o.categoryType,
+    provider:  o.providerName,
+    status:    o.status,
+    date:      formatDate(o.createdAt),
+  }))
+
+  const PENDING_REVIEW_ORDERS = orders
+    .filter((o) => o.status === 'REVIEW')
+    .slice(0, 3)
+    .map((o) => ({
+      id:          o.reference,
+      orderId:     o.id,
+      category:    formatCategory(o.category),
+      orderType:   o.categoryType,
+      provider:    o.providerName,
+      submittedAt: formatDate(o.updatedAt),
+      price:       `€${o.totalAmount.toFixed(2)}`,
+    }))
+
+  const STATS = {
+    activeOrders:       orders.filter((o) => ACTIVE_STATUSES.includes(o.status)).length,
+    pendingReview:      orders.filter((o) => o.status === 'REVIEW').length,
+    completedThisMonth: orders.filter(
+      (o) => o.status === 'COMPLETE' && new Date(o.createdAt) >= startOfMonth,
+    ).length,
+    averageRating: 0,
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
+        Loading dashboard…
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -223,8 +210,8 @@ export default function ClientDashboardPage() {
           {PENDING_REVIEW_ORDERS.map((order) => {
             const href =
               order.orderType === "aligner"
-                ? `/client/orders/${order.id}/aligner`
-                : `/client/orders/${order.id}`
+                ? `/client/orders/${order.orderId}/aligner`
+                : `/client/orders/${order.orderId}`
             return (
               <div
                 key={order.id}
@@ -319,8 +306,8 @@ export default function ClientDashboardPage() {
                 {RECENT_ORDERS.map((order, i) => {
                   const href =
                     order.orderType === "aligner"
-                      ? `/client/orders/${order.id}/aligner`
-                      : `/client/orders/${order.id}`
+                      ? `/client/orders/${order.orderId}/aligner`
+                      : `/client/orders/${order.orderId}`
                   return (
                     <tr
                       key={order.id}

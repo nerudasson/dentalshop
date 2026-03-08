@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -13,6 +14,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import OrderStatusBadge from "@/components/ui/order-status-badge"
+import { useRole } from "@/components/providers/role-provider"
+import { getClientOrders } from "@/lib/actions/orders"
 import type { OrderStatus } from "@/lib/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -29,186 +32,6 @@ interface Order {
   totalNum: number
 }
 
-// ─── Dummy data (15+ orders) ──────────────────────────────────────────────────
-
-const ALL_ORDERS: Order[] = [
-  {
-    id: "ORD-2024-00142",
-    category: "Crowns",
-    orderType: "prosthetics",
-    provider: "ClearCAD Studio",
-    status: "REVIEW",
-    dateCreated: "Mar 1, 2026",
-    dateCreatedIso: "2026-03-01",
-    total: "€312.50",
-    totalNum: 312.5,
-  },
-  {
-    id: "ORD-2024-00141",
-    category: "Bridges",
-    orderType: "prosthetics",
-    provider: "ProDesign Lab",
-    status: "IN_PROGRESS",
-    dateCreated: "Feb 28, 2026",
-    dateCreatedIso: "2026-02-28",
-    total: "€441.00",
-    totalNum: 441.0,
-  },
-  {
-    id: "ORD-2024-00140",
-    category: "Aligner Design",
-    orderType: "aligner",
-    provider: "ClearSmile Studio",
-    status: "REVIEW",
-    dateCreated: "Feb 25, 2026",
-    dateCreatedIso: "2026-02-25",
-    total: "€714.00",
-    totalNum: 714.0,
-  },
-  {
-    id: "ORD-2024-00139",
-    category: "Veneers",
-    orderType: "prosthetics",
-    provider: "DentalCAD Pro",
-    status: "COMPLETE",
-    dateCreated: "Feb 20, 2026",
-    dateCreatedIso: "2026-02-20",
-    total: "€289.80",
-    totalNum: 289.8,
-  },
-  {
-    id: "ORD-2024-00138",
-    category: "Aligner Design",
-    orderType: "aligner",
-    provider: "AlignTech Design",
-    status: "IN_PROGRESS",
-    dateCreated: "Feb 18, 2026",
-    dateCreatedIso: "2026-02-18",
-    total: "€567.00",
-    totalNum: 567.0,
-  },
-  {
-    id: "ORD-2024-00137",
-    category: "Implant Abutments",
-    orderType: "prosthetics",
-    provider: "PrecisionCAD Lab",
-    status: "COMPLETE",
-    dateCreated: "Feb 15, 2026",
-    dateCreatedIso: "2026-02-15",
-    total: "€378.00",
-    totalNum: 378.0,
-  },
-  {
-    id: "ORD-2024-00136",
-    category: "Inlays / Onlays",
-    orderType: "prosthetics",
-    provider: "MeshForge Studio",
-    status: "REVIEW",
-    dateCreated: "Feb 22, 2026",
-    dateCreatedIso: "2026-02-22",
-    total: "€226.80",
-    totalNum: 226.8,
-  },
-  {
-    id: "ORD-2024-00135",
-    category: "Aligner Design",
-    orderType: "aligner",
-    provider: "ClearSmile Studio",
-    status: "COMPLETE",
-    dateCreated: "Feb 10, 2026",
-    dateCreatedIso: "2026-02-10",
-    total: "€630.00",
-    totalNum: 630.0,
-  },
-  {
-    id: "ORD-2024-00134",
-    category: "Partial Frameworks",
-    orderType: "prosthetics",
-    provider: "ClearCAD Studio",
-    status: "REVISION_REQUESTED",
-    dateCreated: "Feb 8, 2026",
-    dateCreatedIso: "2026-02-08",
-    total: "€504.00",
-    totalNum: 504.0,
-  },
-  {
-    id: "ORD-2024-00133",
-    category: "Crowns",
-    orderType: "prosthetics",
-    provider: "ProDesign Lab",
-    status: "COMPLETE",
-    dateCreated: "Feb 3, 2026",
-    dateCreatedIso: "2026-02-03",
-    total: "€262.50",
-    totalNum: 262.5,
-  },
-  {
-    id: "ORD-2024-00132",
-    category: "Aligner Design",
-    orderType: "aligner",
-    provider: "AlignTech Design",
-    status: "REVISION_REQUESTED",
-    dateCreated: "Jan 29, 2026",
-    dateCreatedIso: "2026-01-29",
-    total: "€483.00",
-    totalNum: 483.0,
-  },
-  {
-    id: "ORD-2024-00131",
-    category: "Bridges",
-    orderType: "prosthetics",
-    provider: "DentalCAD Pro",
-    status: "PAID",
-    dateCreated: "Jan 25, 2026",
-    dateCreatedIso: "2026-01-25",
-    total: "€420.00",
-    totalNum: 420.0,
-  },
-  {
-    id: "ORD-2024-00130",
-    category: "Veneers",
-    orderType: "prosthetics",
-    provider: "MeshForge Studio",
-    status: "COMPLETE",
-    dateCreated: "Jan 20, 2026",
-    dateCreatedIso: "2026-01-20",
-    total: "€336.00",
-    totalNum: 336.0,
-  },
-  {
-    id: "ORD-2024-00129",
-    category: "Aligner Design",
-    orderType: "aligner",
-    provider: "ClearSmile Studio",
-    status: "PAID",
-    dateCreated: "Jan 15, 2026",
-    dateCreatedIso: "2026-01-15",
-    total: "€525.00",
-    totalNum: 525.0,
-  },
-  {
-    id: "ORD-2024-00128",
-    category: "Crowns",
-    orderType: "prosthetics",
-    provider: "PrecisionCAD Lab",
-    status: "COMPLETE",
-    dateCreated: "Jan 10, 2026",
-    dateCreatedIso: "2026-01-10",
-    total: "€297.50",
-    totalNum: 297.5,
-  },
-  {
-    id: "ORD-2024-00127",
-    category: "Implant Abutments",
-    orderType: "prosthetics",
-    provider: "ClearCAD Studio",
-    status: "DISPUTED",
-    dateCreated: "Jan 5, 2026",
-    dateCreatedIso: "2026-01-05",
-    total: "€357.00",
-    totalNum: 357.0,
-  },
-]
 
 const ALL_STATUSES: OrderStatus[] = [
   "DRAFT",
@@ -395,8 +218,44 @@ function FilterChip({ label, onRemove }: FilterChipProps) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function formatCategoryLabel(cat: string): string {
+  const MAP: Record<string, string> = {
+    crowns: "Crowns",
+    bridges: "Bridges",
+    inlays_onlays: "Inlays / Onlays",
+    implant_abutments: "Implant Abutments",
+    partial_frameworks: "Partial Frameworks",
+    veneers: "Veneers",
+    aligner_design: "Aligner Design",
+  }
+  return MAP[cat] ?? cat.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export default function ClientOrdersPage() {
   const router = useRouter()
+  const { orgId } = useRole()
+
+  const { data: result, isLoading } = useQuery({
+    queryKey: ["client-orders", orgId],
+    queryFn:  () => getClientOrders(orgId),
+  })
+
+  const ALL_ORDERS = useMemo(
+    () =>
+      (result?.data ?? []).map((o) => ({
+        id:             o.reference,
+        orderId:        o.id,
+        category:       formatCategoryLabel(o.category),
+        orderType:      o.categoryType as "prosthetics" | "aligner",
+        provider:       o.providerName,
+        status:         o.status,
+        dateCreated:    new Date(o.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+        dateCreatedIso: new Date(o.createdAt).toISOString().slice(0, 10),
+        total:          `€${o.totalAmount.toFixed(2)}`,
+        totalNum:       o.totalAmount,
+      })),
+    [result],
+  )
 
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<OrderStatus[]>([])
@@ -442,6 +301,14 @@ export default function ClientOrdersPage() {
 
     return rows
   }, [search, statusFilter, categoryFilter, orderTypeFilter, sortField, sortDir])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
+        Loading orders…
+      </div>
+    )
+  }
 
   const activeFilterCount =
     statusFilter.length + categoryFilter.length + (orderTypeFilter ? 1 : 0)

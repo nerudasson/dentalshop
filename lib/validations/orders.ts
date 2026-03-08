@@ -86,6 +86,9 @@ export const createProstheticsOrderSchema = z.object({
     .array(z.string().min(1))
     .min(1, 'At least one scan file must be uploaded'),
   designParams: designParametersSchema,
+  clientOrgId: z.string().min(1, 'Client org ID is required'),
+  basePrice: z.number().positive('Base price must be positive'),
+  extraTeethPrice: z.number().min(0).optional(),
 })
 
 // ─── Create Aligner Order ──────────────────────────────────────────────────
@@ -103,6 +106,8 @@ export const createAlignerOrderSchema = z.object({
       .min(1, 'At least one clinical photo is required'),
     supplementaryFiles: z.array(z.string().min(1)),
   }),
+  clientOrgId: z.string().min(1, 'Client org ID is required'),
+  basePrice: z.number().positive('Base price must be positive'),
 })
 
 // ─── Update Order Status ───────────────────────────────────────────────────
@@ -130,10 +135,11 @@ export const updateOrderStatusSchema = z.object({
 
 export const requestRevisionSchema = z.object({
   orderId: z.string().min(1, 'Order ID is required'),
-  revisionNote: z
+  reason: z
     .string()
     .min(10, 'Please provide a description of the requested changes (min 10 characters)')
     .max(2000, 'Revision note cannot exceed 2000 characters'),
+  requestedByOrgId: z.string().min(1, 'Requestor org ID is required'),
 })
 
 // ─── Approve Order ─────────────────────────────────────────────────────────
@@ -150,6 +156,7 @@ export const submitSimulationSchema = z.object({
     .string()
     .url('Must be a valid URL')
     .min(1, 'Simulation URL is required'),
+  treatmentSummary: z.record(z.string(), z.unknown()).optional(),
 })
 
 // ─── Types ─────────────────────────────────────────────────────────────────

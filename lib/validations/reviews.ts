@@ -13,6 +13,7 @@ export const createReviewSchema = z.object({
     .string()
     .max(1000, 'Review comment cannot exceed 1000 characters')
     .optional(),
+  reviewerOrgId: z.string().min(1, 'Reviewer org ID is required'),
 })
 
 // ─── Respond to Review ─────────────────────────────────────────────────────

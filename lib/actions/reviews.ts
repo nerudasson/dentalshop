@@ -1,6 +1,7 @@
 'use server'
 
 import { z } from 'zod'
+import { db } from '@/lib/db'
 import { createReviewSchema, respondToReviewSchema } from '@/lib/validations/reviews'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -32,13 +33,35 @@ export async function createReview(
   try {
     const validated = createReviewSchema.parse(input)
 
-    // TODO: Replace with Prisma DB call when database is connected
-    // - Verify the order belongs to the current client org
-    // - Verify order status is COMPLETE
-    // - Verify no review exists for this order yet
-    console.log('createReview validated:', validated)
+    const order = await db.order.findUnique({ where: { id: validated.orderId } })
+    if (!order) return { success: false, error: 'Order not found' }
+    if (order.status !== 'COMPLETE') return { success: false, error: 'Order is not complete' }
 
-    return { success: true, data: { reviewId: `rev_${Date.now()}` } }
+    const review = await db.review.create({
+      data: {
+        orderId:      validated.orderId,
+        reviewerOrgId: validated.reviewerOrgId,
+        revieweeOrgId: order.providerOrgId!,
+        rating:       validated.rating,
+        comment:      validated.comment,
+      },
+    })
+
+    // Update provider average rating
+    const agg = await db.review.aggregate({
+      where: { revieweeOrgId: order.providerOrgId! },
+      _avg:  { rating: true },
+      _count: { rating: true },
+    })
+    await db.organization.update({
+      where: { id: order.providerOrgId! },
+      data:  {
+        averageRating: agg._avg.rating ?? 0,
+        reviewCount:   agg._count.rating,
+      },
+    })
+
+    return { success: true, data: { reviewId: review.id } }
   } catch (err) {
     if (err instanceof z.ZodError) {
       return { success: false, error: err.issues[0]?.message ?? 'Validation failed' }
@@ -55,10 +78,10 @@ export async function respondToReview(
   try {
     const validated = respondToReviewSchema.parse(input)
 
-    // TODO: Replace with Prisma DB call when database is connected
-    // - Verify the review belongs to the current provider org
-    // - Verify no response exists yet
-    console.log('respondToReview validated:', validated)
+    await db.review.update({
+      where: { id: validated.reviewId },
+      data:  { response: validated.response, respondedAt: new Date() },
+    })
 
     return { success: true, data: { reviewId: validated.reviewId } }
   } catch (err) {
@@ -71,14 +94,28 @@ export async function respondToReview(
 
 // ─── Get Order Reviews ─────────────────────────────────────────────────────
 
-export async function getOrderReviews(
-  orderId: string,
-): Promise<ActionResult<ReviewSummary[]>> {
+export async function getOrderReviews(orderId: string): Promise<ActionResult<ReviewSummary[]>> {
   try {
-    // TODO: Replace with Prisma DB call when database is connected
-    console.log('getOrderReviews:', orderId)
+    const reviews = await db.review.findMany({
+      where:   { orderId },
+      include: { reviewerOrg: true },
+    })
 
-    return { success: true, data: [] }
+    return {
+      success: true,
+      data: reviews.map((r: (typeof reviews)[0]) => ({
+        id:            r.id,
+        orderId:       r.orderId,
+        rating:        r.rating,
+        comment:       r.comment ?? undefined,
+        response:      r.response ?? undefined,
+        clientName:    r.reviewerOrg.name,
+        clientOrgName: r.reviewerOrg.name,
+        providerOrgId: r.revieweeOrgId,
+        createdAt:     r.createdAt,
+        respondedAt:   r.respondedAt ?? undefined,
+      })),
+    }
   } catch {
     return { success: false, error: 'Failed to fetch reviews' }
   }
@@ -90,10 +127,28 @@ export async function getProviderReviews(
   providerOrgId: string,
 ): Promise<ActionResult<ReviewSummary[]>> {
   try {
-    // TODO: Replace with Prisma DB call when database is connected
-    console.log('getProviderReviews:', providerOrgId)
+    const reviews = await db.review.findMany({
+      where:   { revieweeOrgId: providerOrgId },
+      include: { reviewerOrg: true },
+      orderBy: { createdAt: 'desc' },
+    })
 
-    return { success: true, data: [] }
+    type DbProviderReview = (typeof reviews)[0]
+    return {
+      success: true,
+      data: reviews.map((r: DbProviderReview) => ({
+        id:            r.id,
+        orderId:       r.orderId,
+        rating:        r.rating,
+        comment:       r.comment ?? undefined,
+        response:      r.response ?? undefined,
+        clientName:    r.reviewerOrg.name,
+        clientOrgName: r.reviewerOrg.name,
+        providerOrgId: r.revieweeOrgId,
+        createdAt:     r.createdAt,
+        respondedAt:   r.respondedAt ?? undefined,
+      })),
+    }
   } catch {
     return { success: false, error: 'Failed to fetch provider reviews' }
   }
@@ -105,10 +160,27 @@ export async function getClientReviews(
   clientOrgId: string,
 ): Promise<ActionResult<ReviewSummary[]>> {
   try {
-    // TODO: Replace with Prisma DB call when database is connected
-    console.log('getClientReviews:', clientOrgId)
+    const reviews = await db.review.findMany({
+      where:   { reviewerOrgId: clientOrgId },
+      include: { reviewerOrg: true },
+      orderBy: { createdAt: 'desc' },
+    })
 
-    return { success: true, data: [] }
+    return {
+      success: true,
+      data: reviews.map((r: (typeof reviews)[0]) => ({
+        id:            r.id,
+        orderId:       r.orderId,
+        rating:        r.rating,
+        comment:       r.comment ?? undefined,
+        response:      r.response ?? undefined,
+        clientName:    r.reviewerOrg.name,
+        clientOrgName: r.reviewerOrg.name,
+        providerOrgId: r.revieweeOrgId,
+        createdAt:     r.createdAt,
+        respondedAt:   r.respondedAt ?? undefined,
+      })),
+    }
   } catch {
     return { success: false, error: 'Failed to fetch client reviews' }
   }

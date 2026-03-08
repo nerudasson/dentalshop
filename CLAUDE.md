@@ -12,8 +12,7 @@ A digital design services marketplace for dental prosthetics. Dentists and labs 
 
 ## Current Build Status
 
-> **As of 2026-03-05 — Shell complete.** Next.js initialized, brand design system configured,
-> Tier 1 shell components built, full routing skeleton in place. All dummy data, no auth/backend yet.
+> **As of 2026-03-08 — Backend wired.** Prisma schema complete (13 models). DB client, Server Actions, and React Query provider all wired. All major pages (client dashboard, orders, provider dashboard, queue, admin orders) now call server actions — live data when DATABASE_URL is set.
 
 ### What exists
 - `CLAUDE.md` — this specification
@@ -95,11 +94,11 @@ Update this section as items are completed:
 - [x] Metrics overview
 
 #### Backend
-- [ ] Prisma schema (`/prisma/schema.prisma`)
+- [x] Prisma schema (`/prisma/schema.prisma`) — 13 models, full domain coverage
 - [ ] Prisma migrations
 - [x] Server Actions (`/lib/actions/*`) — orders, products, providers, files, reviews, fees, messages, admin
 - [x] Zod validation schemas (`/lib/validations/*`) — orders, products, fees, reviews, messages
-- [ ] Replace all dummy data with real DB queries
+- [x] Replace all dummy data with real DB queries
 
 ---
 

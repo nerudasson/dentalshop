@@ -1,0 +1,309 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum OrderStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAID
+  IN_PROGRESS
+  REVIEW
+  REVISION_REQUESTED
+  COMPLETE
+  DISPUTED
+  RESOLVED
+}
+
+enum CategoryType {
+  prosthetics
+  aligner
+}
+
+enum FeeScope {
+  global
+  org
+  service_type
+}
+
+enum FeeType {
+  client_fee
+  provider_commission
+}
+
+enum TransactionType {
+  client_payment
+  performer_payout
+  platform_fee
+}
+
+enum FileSection {
+  scan
+  design
+  clinical_photo
+  supplementary
+  other
+}
+
+// ─── Organization ────────────────────────────────────────────────────────────
+
+model Organization {
+  id               String    @id @default(cuid())
+  clerkOrgId       String?   @unique @map("clerk_org_id")
+  name             String
+  isPractice       Boolean   @default(false) @map("is_practice")
+  canDesign        Boolean   @default(false) @map("can_design")
+  isSuperAdmin     Boolean   @default(false) @map("is_super_admin")
+  stripeAccountId  String?   @map("stripe_account_id")
+  location         String?
+  website          String?
+  logoUrl          String?   @map("logo_url")
+  bio              String?
+  software         String[]
+  averageRating    Float     @default(0) @map("average_rating")
+  reviewCount      Int       @default(0) @map("review_count")
+  completedDesigns Int       @default(0) @map("completed_designs")
+  turnaroundDays   Int       @default(3) @map("turnaround_days")
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  clientOrders     Order[]            @relation("ClientOrg")
+  providerOrders   Order[]            @relation("ProviderOrg")
+  products         Product[]
+  sentMessages     Message[]
+  givenReviews     Review[]           @relation("ReviewerOrg")
+  receivedReviews  Review[]           @relation("RevieweeOrg")
+  workSteps        WorkStep[]
+  feeOverrides     FeeConfiguration[] @relation("OrgFeeOverride")
+  uploadedFiles    FileRecord[]
+
+  @@map("organizations")
+}
+
+// ─── Product ─────────────────────────────────────────────────────────────────
+
+model Product {
+  id             String       @id @default(cuid())
+  providerOrgId  String       @map("provider_org_id")
+  providerOrg    Organization @relation(fields: [providerOrgId], references: [id])
+  categoryType   CategoryType @map("category_type")
+  category       String
+  name           String
+  description    String?
+  basePrice      Float        @map("base_price")
+  pricePerTooth  Float        @default(0) @map("price_per_tooth")
+  pricePerArch   Float        @default(0) @map("price_per_arch")
+  turnaroundDays Int          @map("turnaround_days")
+  software       String[]
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  orderItems     OrderItem[]
+
+  @@map("products")
+}
+
+// ─── Order ───────────────────────────────────────────────────────────────────
+
+model Order {
+  id                     String        @id @default(cuid())
+  reference              String        @unique
+  clientOrgId            String        @map("client_org_id")
+  clientOrg              Organization  @relation("ClientOrg", fields: [clientOrgId], references: [id])
+  providerOrgId          String?       @map("provider_org_id")
+  providerOrg            Organization? @relation("ProviderOrg", fields: [providerOrgId], references: [id])
+  sellingOrgId           String?       @map("selling_org_id")
+  categoryType           CategoryType  @map("category_type")
+  status                 OrderStatus   @default(DRAFT)
+  clientFeeRate          Float         @map("client_fee_rate")
+  providerCommissionRate Float         @map("provider_commission_rate")
+  createdAt              DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+
+  orderItems    OrderItem[]
+  transactions  Transaction[]
+  messages      Message[]
+  reviews       Review[]
+  revisions     RevisionRequest[]
+
+  @@map("orders")
+}
+
+// ─── OrderItem ───────────────────────────────────────────────────────────────
+
+model OrderItem {
+  id              String    @id @default(cuid())
+  orderId         String    @map("order_id")
+  order           Order     @relation(fields: [orderId], references: [id])
+  productId       String?   @map("product_id")
+  product         Product?  @relation(fields: [productId], references: [id])
+  category        String
+  selectedTeeth   Int[]     @map("selected_teeth")
+  designParams    Json?     @map("design_params")
+  alignerConfig   Json?     @map("aligner_config")
+  basePrice       Float     @map("base_price")
+  extraTeethPrice Float     @default(0) @map("extra_teeth_price")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  workSteps          WorkStep[]
+  files              FileRecord[]
+  simulationVersions SimulationVersion[]
+
+  @@map("order_items")
+}
+
+// ─── WorkStep ────────────────────────────────────────────────────────────────
+
+model WorkStep {
+  id            String        @id @default(cuid())
+  orderItemId   String        @map("order_item_id")
+  orderItem     OrderItem     @relation(fields: [orderItemId], references: [id])
+  stepType      String        @default("design") @map("step_type")
+  sequence      Int           @default(1)
+  providerOrgId String?       @map("provider_org_id")
+  providerOrg   Organization? @relation(fields: [providerOrgId], references: [id])
+  status        OrderStatus   @default(IN_PROGRESS)
+  startedAt     DateTime?     @map("started_at")
+  submittedAt   DateTime?     @map("submitted_at")
+  completedAt   DateTime?     @map("completed_at")
+  notes         String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@map("work_steps")
+}
+
+// ─── Transaction ─────────────────────────────────────────────────────────────
+
+model Transaction {
+  id                    String          @id @default(cuid())
+  orderId               String          @map("order_id")
+  order                 Order           @relation(fields: [orderId], references: [id])
+  type                  TransactionType
+  amount                Float
+  stripePaymentIntentId String?         @map("stripe_payment_intent_id")
+  stripeTransferId      String?         @map("stripe_transfer_id")
+  processedAt           DateTime?       @map("processed_at")
+  createdAt             DateTime        @default(now()) @map("created_at")
+
+  @@map("transactions")
+}
+
+// ─── FeeConfiguration ────────────────────────────────────────────────────────
+
+model FeeConfiguration {
+  id          String        @id @default(cuid())
+  scope       FeeScope      @default(global)
+  orgId       String?       @map("org_id")
+  org         Organization? @relation("OrgFeeOverride", fields: [orgId], references: [id])
+  serviceType String?       @map("service_type")
+  feeType     FeeType       @map("fee_type")
+  rate        Float
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@map("fee_configurations")
+}
+
+// ─── RoutingRule ─────────────────────────────────────────────────────────────
+
+model RoutingRule {
+  id            String   @id @default(cuid())
+  category      String
+  providerOrgId String   @map("provider_org_id")
+  priority      Int      @default(0)
+  isActive      Boolean  @default(false) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("routing_rules")
+}
+
+// ─── FileRecord ──────────────────────────────────────────────────────────────
+
+model FileRecord {
+  id             String       @id @default(cuid())
+  orderItemId    String?      @map("order_item_id")
+  orderItem      OrderItem?   @relation(fields: [orderItemId], references: [id])
+  uploaderOrgId  String       @map("uploader_org_id")
+  uploaderOrg    Organization @relation(fields: [uploaderOrgId], references: [id])
+  fileName       String       @map("file_name")
+  fileSize       Int          @map("file_size")
+  s3Key          String       @map("s3_key")
+  mimeType       String?      @map("mime_type")
+  section        FileSection  @default(other)
+  isDesignOutput Boolean      @default(false) @map("is_design_output")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@map("file_records")
+}
+
+// ─── Message ─────────────────────────────────────────────────────────────────
+
+model Message {
+  id          String       @id @default(cuid())
+  orderId     String       @map("order_id")
+  order       Order        @relation(fields: [orderId], references: [id])
+  senderOrgId String       @map("sender_org_id")
+  senderOrg   Organization @relation(fields: [senderOrgId], references: [id])
+  senderRole  String       @map("sender_role")
+  senderName  String       @map("sender_name")
+  content     String
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  @@map("messages")
+}
+
+// ─── Review ──────────────────────────────────────────────────────────────────
+
+model Review {
+  id            String       @id @default(cuid())
+  orderId       String       @map("order_id")
+  order         Order        @relation(fields: [orderId], references: [id])
+  reviewerOrgId String       @map("reviewer_org_id")
+  reviewerOrg   Organization @relation("ReviewerOrg", fields: [reviewerOrgId], references: [id])
+  revieweeOrgId String       @map("reviewee_org_id")
+  revieweeOrg   Organization @relation("RevieweeOrg", fields: [revieweeOrgId], references: [id])
+  rating        Int
+  comment       String?
+  response      String?
+  createdAt     DateTime     @default(now()) @map("created_at")
+  respondedAt   DateTime?    @map("responded_at")
+
+  @@unique([orderId, reviewerOrgId])
+  @@map("reviews")
+}
+
+// ─── RevisionRequest ─────────────────────────────────────────────────────────
+
+model RevisionRequest {
+  id               String   @id @default(cuid())
+  orderId          String   @map("order_id")
+  order            Order    @relation(fields: [orderId], references: [id])
+  requestedByOrgId String   @map("requested_by_org_id")
+  reason           String
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("revision_requests")
+}
+
+// ─── SimulationVersion ───────────────────────────────────────────────────────
+
+model SimulationVersion {
+  id               String    @id @default(cuid())
+  orderItemId      String    @map("order_item_id")
+  orderItem        OrderItem @relation(fields: [orderItemId], references: [id])
+  url              String
+  version          Int       @default(1)
+  treatmentSummary Json?     @map("treatment_summary")
+  submittedAt      DateTime  @default(now()) @map("submitted_at")
+
+  @@map("simulation_versions")
+}

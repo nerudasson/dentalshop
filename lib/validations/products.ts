@@ -3,32 +3,15 @@ import { z } from 'zod'
 // ─── Create Product ────────────────────────────────────────────────────────
 
 export const createProductSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Product name is required')
-    .max(100, 'Product name cannot exceed 100 characters'),
-  description: z.string().max(1000, 'Description cannot exceed 1000 characters'),
+  name: z.string().min(1, 'Product name is required').max(100),
+  description: z.string().max(1000).optional(),
   categoryType: z.enum(['prosthetics', 'aligner']),
-  /** Subcategory for prosthetics, e.g. "crowns", "bridges" */
-  subcategory: z
-    .string()
-    .max(100, 'Subcategory cannot exceed 100 characters')
-    .optional(),
-  price: z
-    .number()
-    .positive('Price must be greater than zero'),
-  currency: z
-    .string()
-    .length(3, 'Currency must be a 3-letter ISO code (e.g. EUR, USD)'),
-  turnaroundDays: z
-    .number()
-    .int('Turnaround days must be a whole number')
-    .min(1, 'Turnaround must be at least 1 day')
-    .max(90, 'Turnaround cannot exceed 90 days'),
-  software: z
-    .array(z.string().min(1).max(50))
-    .min(1, 'At least one software must be listed')
-    .max(10, 'Cannot list more than 10 software tools'),
+  category: z.string().min(1, 'Category is required').max(100),
+  basePrice: z.number().positive('Base price must be greater than zero'),
+  pricePerTooth: z.number().min(0).optional(),
+  pricePerArch: z.number().min(0).optional(),
+  turnaroundDays: z.number().int().min(1).max(90),
+  software: z.array(z.string().min(1).max(50)).max(10).optional(),
   isActive: z.boolean().default(true),
 })
 

@@ -1,6 +1,7 @@
 'use server'
 
 import { z } from 'zod'
+import { db } from '@/lib/db'
 import { sendMessageSchema } from '@/lib/validations/messages'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -33,22 +34,29 @@ export async function sendMessage(
   try {
     const validated = sendMessageSchema.parse(input)
 
-    // TODO: Replace with Prisma DB call when database is connected
-    // - Verify sender belongs to the order (as client or provider org)
-    console.log('sendMessage from:', senderOrgId, 'validated:', validated)
+    const msg = await db.message.create({
+      data: {
+        orderId:    validated.orderId,
+        senderOrgId,
+        senderRole,
+        senderName,
+        content:    validated.content,
+      },
+    })
 
-    const message: MessageRecord = {
-      id: `msg_${Date.now()}`,
-      orderId: validated.orderId,
-      senderOrgId,
-      senderName,
-      senderRole,
-      content: validated.content,
-      attachmentIds: validated.attachmentIds ?? [],
-      createdAt: new Date(),
+    return {
+      success: true,
+      data: {
+        id:           msg.id,
+        orderId:      msg.orderId,
+        senderOrgId:  msg.senderOrgId,
+        senderName:   msg.senderName,
+        senderRole:   msg.senderRole as 'client' | 'provider',
+        content:      msg.content,
+        attachmentIds: [],
+        createdAt:    msg.createdAt,
+      },
     }
-
-    return { success: true, data: message }
   } catch (err) {
     if (err instanceof z.ZodError) {
       return { success: false, error: err.issues[0]?.message ?? 'Validation failed' }
@@ -63,11 +71,25 @@ export async function getOrderMessages(
   orderId: string,
 ): Promise<ActionResult<MessageRecord[]>> {
   try {
-    // TODO: Replace with Prisma DB call when database is connected
-    // - Verify requesting user belongs to the order
-    console.log('getOrderMessages:', orderId)
+    const messages = await db.message.findMany({
+      where:   { orderId },
+      orderBy: { createdAt: 'asc' },
+    })
 
-    return { success: true, data: [] }
+    type DbMessage = (typeof messages)[0]
+    return {
+      success: true,
+      data: messages.map((m: DbMessage) => ({
+        id:           m.id,
+        orderId:      m.orderId,
+        senderOrgId:  m.senderOrgId,
+        senderName:   m.senderName,
+        senderRole:   m.senderRole as 'client' | 'provider',
+        content:      m.content,
+        attachmentIds: [],
+        createdAt:    m.createdAt,
+      })),
+    }
   } catch {
     return { success: false, error: 'Failed to fetch messages' }
   }

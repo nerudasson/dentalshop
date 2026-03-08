@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import { RoleProvider } from "@/components/providers/role-provider"
+import QueryProvider from "@/components/providers/query-provider"
 
 export const metadata: Metadata = {
   title: "SAGA.DENTAL — Dental Design Marketplace",
@@ -15,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <RoleProvider>{children}</RoleProvider>
+        <QueryProvider><RoleProvider>{children}</RoleProvider></QueryProvider>
       </body>
     </html>
   )

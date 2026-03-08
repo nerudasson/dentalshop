@@ -25,7 +25,9 @@ import {
 import { Button } from "@/components/ui/button"
 import OrderStatusBadge from "@/components/ui/order-status-badge"
 import StarRating from "@/components/ui/star-rating"
+import { useQuery } from "@tanstack/react-query"
 import { useRole } from "@/components/providers/role-provider"
+import { getProviderOrders } from "@/lib/actions/orders"
 import type { OrderStatus } from "@/lib/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -52,120 +54,6 @@ interface WeeklyEarning {
   week: string
   amount: number
 }
-
-// ─── Dummy data ───────────────────────────────────────────────────────────────
-
-const IS_STRIPE_CONNECTED = false
-
-const STATS = {
-  newOrders: 2,
-  inProgress: 3,
-  awaitingReview: 2,
-  completedThisMonth: 8,
-  completedLastMonth: 6,
-  avgRating: 4.8,
-  reviewCount: 47,
-}
-
-const MONTHLY_EARNINGS = {
-  amount: 3_842.5,
-  pendingPayout: 640.0,
-  currency: "€",
-}
-
-const WEEKLY_EARNINGS: WeeklyEarning[] = [
-  { week: "Feb 3", amount: 720 },
-  { week: "Feb 10", amount: 980 },
-  { week: "Feb 17", amount: 640 },
-  { week: "Feb 24", amount: 1502.5 },
-]
-
-const PROSTHETICS_BREAKDOWN = {
-  activeOrders: 4,
-  categories: [
-    { label: "Crowns", count: 2 },
-    { label: "Bridges", count: 1 },
-    { label: "Veneers", count: 1 },
-  ],
-}
-
-const ALIGNER_BREAKDOWN = {
-  activeOrders: 1,
-  complexity: [
-    { label: "Simple", count: 0 },
-    { label: "Moderate", count: 1 },
-    { label: "Complex", count: 0 },
-  ],
-}
-
-const RECENT_ORDERS: RecentOrder[] = [
-  {
-    id: "ORD-2026-00215",
-    orderType: "prosthetics",
-    client: "Smith Dental Practice",
-    status: "PAID",
-    deadline: "Mar 10, 2026",
-    isOverdue: false,
-  },
-  {
-    id: "ORD-2026-00213",
-    orderType: "aligner",
-    client: "Bright Smiles Orthodontics",
-    status: "IN_PROGRESS",
-    deadline: "Mar 8, 2026",
-    isOverdue: false,
-  },
-  {
-    id: "ORD-2026-00209",
-    orderType: "prosthetics",
-    client: "Riverside Dental Lab",
-    status: "REVISION_REQUESTED",
-    deadline: "Mar 5, 2026",
-    isOverdue: true,
-  },
-  {
-    id: "ORD-2026-00204",
-    orderType: "prosthetics",
-    client: "Downtown Dental Group",
-    status: "REVIEW",
-    deadline: "Mar 12, 2026",
-    isOverdue: false,
-  },
-  {
-    id: "ORD-2026-00198",
-    orderType: "prosthetics",
-    client: "Smith Dental Practice",
-    status: "COMPLETE",
-    deadline: "Feb 28, 2026",
-    isOverdue: false,
-  },
-]
-
-const PENDING_ACTIONS: PendingAction[] = [
-  {
-    id: "pa-1",
-    type: "revision",
-    orderId: "ORD-2026-00209",
-    description: "Client requested changes on ORD-2026-00209",
-    actionLabel: "Review",
-    href: "/provider/queue",
-  },
-  {
-    id: "pa-2",
-    type: "new_order",
-    orderId: "ORD-2026-00215",
-    description: "New order from Smith Dental Practice awaiting start",
-    actionLabel: "Start",
-    href: "/provider/queue",
-  },
-  {
-    id: "pa-3",
-    type: "review",
-    description: "New 5-star review from Downtown Dental Group",
-    actionLabel: "Respond",
-    href: "/provider/reviews",
-  },
-]
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -220,17 +108,80 @@ function PendingActionBg(type: PendingAction["type"]) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProviderDashboardPage() {
-  const { orgName } = useRole()
+  const { orgName, orgId } = useRole()
+
+  const { data: result, isLoading } = useQuery({
+    queryKey: ["provider-orders", orgId],
+    queryFn:  () => getProviderOrders(orgId),
+  })
+
+  const orders = result?.data ?? []
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+
+  const IS_STRIPE_CONNECTED = false
+
+  const STATS = {
+    newOrders:          orders.filter((o) => o.status === "PAID").length,
+    inProgress:         orders.filter((o) => o.status === "IN_PROGRESS").length,
+    awaitingReview:     orders.filter((o) => o.status === "REVIEW").length,
+    completedThisMonth: orders.filter((o) => o.status === "COMPLETE" && new Date(o.createdAt) >= startOfMonth).length,
+    completedLastMonth: orders.filter((o) => o.status === "COMPLETE" && new Date(o.createdAt) >= lastMonthStart && new Date(o.createdAt) < startOfMonth).length,
+    avgRating:          0,
+    reviewCount:        0,
+  }
+
+  const MONTHLY_EARNINGS = { amount: 0, pendingPayout: 0, currency: "€" }
+  const WEEKLY_EARNINGS: WeeklyEarning[] = []
+
+  const PROSTHETICS_BREAKDOWN = {
+    activeOrders: orders.filter((o) => o.categoryType === "prosthetics").length,
+    categories: [] as { label: string; count: number }[],
+  }
+  const ALIGNER_BREAKDOWN = {
+    activeOrders: orders.filter((o) => o.categoryType === "aligner").length,
+    complexity: [] as { label: string; count: number }[],
+  }
+
+  const RECENT_ORDERS: RecentOrder[] = orders.slice(0, 5).map((o) => ({
+    id:        o.reference,
+    orderType: o.categoryType,
+    client:    o.clientOrgId,
+    status:    o.status,
+    deadline:  new Date(new Date(o.updatedAt).getTime() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+    isOverdue: false,
+  }))
+
+  const PENDING_ACTIONS: PendingAction[] = orders
+    .filter((o) => o.status === "REVISION_REQUESTED" || o.status === "PAID")
+    .slice(0, 3)
+    .map((o) => ({
+      id:          o.id,
+      type:        o.status === "REVISION_REQUESTED" ? "revision" as const : "new_order" as const,
+      orderId:     o.reference,
+      description: o.status === "REVISION_REQUESTED" ? `Client requested changes on ${o.reference}` : `New order awaiting start`,
+      actionLabel: o.status === "REVISION_REQUESTED" ? "Review" : "Start",
+      href:        "/provider/queue",
+    }))
 
   const completedTrend = STATS.completedThisMonth - STATS.completedLastMonth
   const trendPositive = completedTrend >= 0
 
-  const today = new Date().toLocaleDateString("en-GB", {
+  const today = now.toLocaleDateString("en-GB", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   })
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
+        Loading dashboard…
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 pb-10">

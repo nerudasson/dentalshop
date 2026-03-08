@@ -1,5 +1,7 @@
 'use server'
 
+import { db } from '@/lib/db'
+
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 export interface ActionResult<T> {
@@ -11,22 +13,24 @@ export interface ActionResult<T> {
 export interface UploadUrlResult {
   uploadUrl: string
   fileId: string
-  /** Public URL available after upload is confirmed */
   publicUrl: string
 }
 
 export interface ConfirmUploadInput {
   fileId: string
   orderId: string
+  orderItemId?: string
   section?: string
+  fileName: string
+  fileSize: number
+  mimeType?: string
+  s3Key: string
+  uploaderOrgId: string
+  isDesignOutput?: boolean
 }
 
 // ─── Get Upload URL ────────────────────────────────────────────────────────
 
-/**
- * Returns a presigned URL for direct-to-storage upload (S3/R2).
- * The client uploads the file directly using this URL, then calls confirmUpload.
- */
 export async function getUploadUrl(
   fileName: string,
   fileType: string,
@@ -36,16 +40,17 @@ export async function getUploadUrl(
     // TODO: Replace with real S3/R2 presigned URL generation
     // const command = new PutObjectCommand({ Bucket, Key, ContentType })
     // const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 })
-    console.log('getUploadUrl:', { fileName, fileType, fileSizeBytes })
-
+    const s3Key = `uploads/${Date.now()}_${fileName.replace(/[^a-z0-9._-]/gi, '_')}`
     const fileId = `file_${Date.now()}_${Math.random().toString(36).slice(2)}`
+
+    console.log('getUploadUrl:', { fileName, fileType, fileSizeBytes })
 
     return {
       success: true,
       data: {
-        uploadUrl: `https://storage.example.com/upload/${fileId}`,
+        uploadUrl: `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? 'https://storage.example.com'}/upload/${s3Key}`,
         fileId,
-        publicUrl: `https://storage.example.com/files/${fileId}/${fileName}`,
+        publicUrl: `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? 'https://storage.example.com'}/${s3Key}`,
       },
     }
   } catch {
@@ -55,19 +60,32 @@ export async function getUploadUrl(
 
 // ─── Confirm Upload ────────────────────────────────────────────────────────
 
-/**
- * Called after the client successfully uploads to the presigned URL.
- * Records the file in the database and associates it with an order.
- */
 export async function confirmUpload(
   input: ConfirmUploadInput,
 ): Promise<ActionResult<{ fileId: string }>> {
   try {
-    // TODO: Replace with Prisma DB call when database is connected
-    // await db.orderFile.create({ data: { ... } })
-    console.log('confirmUpload:', input)
+    const sectionMap: Record<string, 'scan' | 'design' | 'clinical_photo' | 'supplementary' | 'other'> = {
+      scan:           'scan',
+      design:         'design',
+      clinical_photo: 'clinical_photo',
+      supplementary:  'supplementary',
+    }
+    const section = sectionMap[input.section ?? ''] ?? 'other'
 
-    return { success: true, data: { fileId: input.fileId } }
+    const record = await db.fileRecord.create({
+      data: {
+        orderItemId:   input.orderItemId ?? null,
+        uploaderOrgId: input.uploaderOrgId,
+        fileName:      input.fileName,
+        fileSize:      input.fileSize,
+        s3Key:         input.s3Key,
+        mimeType:      input.mimeType ?? null,
+        section,
+        isDesignOutput: input.isDesignOutput ?? false,
+      },
+    })
+
+    return { success: true, data: { fileId: record.id } }
   } catch {
     return { success: false, error: 'Failed to confirm upload' }
   }
@@ -75,26 +93,21 @@ export async function confirmUpload(
 
 // ─── Get File Download URL ─────────────────────────────────────────────────
 
-/**
- * Returns a time-limited presigned download URL for a stored file.
- * Validates that the requesting user has access to the file.
- */
 export async function getFileDownloadUrl(
   fileId: string,
 ): Promise<ActionResult<{ downloadUrl: string; expiresAt: Date }>> {
   try {
-    // TODO: Replace with real S3/R2 presigned URL generation
-    // const command = new GetObjectCommand({ Bucket, Key })
-    // const downloadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 })
-    console.log('getFileDownloadUrl:', fileId)
+    const record = await db.fileRecord.findUnique({ where: { id: fileId } })
+    if (!record) return { success: false, error: 'File not found' }
 
-    return {
-      success: true,
-      data: {
-        downloadUrl: `https://storage.example.com/download/${fileId}?token=mock`,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
-      },
-    }
+    // TODO: Replace with real S3/R2 presigned download URL
+    // const command = new GetObjectCommand({ Bucket, Key: record.s3Key })
+    // const downloadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 })
+
+    const downloadUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? 'https://storage.example.com'}/${record.s3Key}?token=mock`
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
+
+    return { success: true, data: { downloadUrl, expiresAt } }
   } catch {
     return { success: false, error: 'Failed to generate download URL' }
   }
@@ -104,8 +117,8 @@ export async function getFileDownloadUrl(
 
 export async function deleteFile(fileId: string): Promise<ActionResult<{ fileId: string }>> {
   try {
-    // TODO: Replace with real S3/R2 deletion + Prisma record removal
-    console.log('deleteFile:', fileId)
+    // TODO: Also delete from S3/R2 when storage is connected
+    await db.fileRecord.delete({ where: { id: fileId } })
 
     return { success: true, data: { fileId } }
   } catch {

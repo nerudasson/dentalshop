@@ -26,7 +26,8 @@ import {
 } from "@/components/ui/select"
 import OrderStatusBadge from "@/components/ui/order-status-badge"
 import { cn } from "@/lib/utils"
-import { ADMIN_ORDERS, type AdminOrder } from "./_data"
+import { useQuery } from "@tanstack/react-query"
+import { getAdminOrders } from "@/lib/actions/admin"
 import type { OrderStatus } from "@/lib/types"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -57,7 +58,7 @@ const ACTIVE_STATUSES: OrderStatus[] = [
 ]
 
 
-function getOrderTypeBadge(type: AdminOrder["orderType"]) {
+function getOrderTypeBadge(type: "prosthetics" | "aligner") {
   if (type === "aligner") {
     return (
       <Badge
@@ -80,20 +81,7 @@ function getOrderTypeBadge(type: AdminOrder["orderType"]) {
 
 // ─── Derived filter options ────────────────────────────────────────────────────
 
-const ALL_PROVIDERS = Array.from(new Set(ADMIN_ORDERS.map((o) => o.provider))).sort()
-const ALL_CLIENTS = Array.from(new Set(ADMIN_ORDERS.map((o) => o.client))).sort()
-const ALL_CATEGORIES = Array.from(new Set(ADMIN_ORDERS.map((o) => o.category))).sort()
-const PRESENT_STATUSES = Array.from(new Set(ADMIN_ORDERS.map((o) => o.status))) as OrderStatus[]
-
-// ─── Stats ────────────────────────────────────────────────────────────────────
-
-const totalOrders = ADMIN_ORDERS.length
-const activeOrders = ADMIN_ORDERS.filter((o) =>
-  ACTIVE_STATUSES.includes(o.status)
-).length
-const inReview = ADMIN_ORDERS.filter((o) => o.status === "REVIEW").length
-const thisMonth = ADMIN_ORDERS.filter((o) => isThisMonth(o.dateCreated)).length
-const disputed = ADMIN_ORDERS.filter((o) => o.status === "DISPUTED").length
+// ─── Stats derived in component ─────────────────────────────────────────────
 
 // ─── Filter state type ────────────────────────────────────────────────────────
 
@@ -164,11 +152,64 @@ function StatCard({
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+type LocalOrder = {
+  id: string
+  reference: string
+  category: string
+  orderType: "prosthetics" | "aligner"
+  client: string
+  provider: string
+  status: OrderStatus
+  dateCreated: Date
+  total: number
+}
+
+function formatCategoryLabel(cat: string): string {
+  const MAP: Record<string, string> = {
+    crowns: "Crowns", bridges: "Bridges", inlays_onlays: "Inlays / Onlays",
+    implant_abutments: "Implant Abutments", partial_frameworks: "Partial Frameworks",
+    veneers: "Veneers", aligner_design: "Aligner Design",
+  }
+  return MAP[cat] ?? cat.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())
+}
+
 export default function AdminOrdersPage() {
   const router = useRouter()
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState<FilterState>(BLANK_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
+
+  const { data: result, isLoading } = useQuery({
+    queryKey: ["admin-orders"],
+    queryFn:  () => getAdminOrders({ pageSize: 200 }),
+  })
+
+  const ADMIN_ORDERS: LocalOrder[] = useMemo(
+    () =>
+      (result?.data?.orders ?? []).map((o) => ({
+        id:          o.reference,
+        reference:   o.reference,
+        category:    formatCategoryLabel(o.category),
+        orderType:   o.categoryType,
+        client:      o.clientOrgName,
+        provider:    o.providerOrgName,
+        status:      o.status,
+        dateCreated: new Date(o.createdAt),
+        total:       o.totalAmount,
+      })),
+    [result],
+  )
+
+  const ALL_PROVIDERS = useMemo(() => Array.from(new Set(ADMIN_ORDERS.map((o) => o.provider))).sort(), [ADMIN_ORDERS])
+  const ALL_CLIENTS = useMemo(() => Array.from(new Set(ADMIN_ORDERS.map((o) => o.client))).sort(), [ADMIN_ORDERS])
+  const ALL_CATEGORIES = useMemo(() => Array.from(new Set(ADMIN_ORDERS.map((o) => o.category))).sort(), [ADMIN_ORDERS])
+  const PRESENT_STATUSES = useMemo(() => Array.from(new Set(ADMIN_ORDERS.map((o) => o.status))).sort() as OrderStatus[], [ADMIN_ORDERS])
+
+  const totalOrders = ADMIN_ORDERS.length
+  const activeOrders = ADMIN_ORDERS.filter((o) => ACTIVE_STATUSES.includes(o.status)).length
+  const inReview = ADMIN_ORDERS.filter((o) => o.status === "REVIEW").length
+  const thisMonth = ADMIN_ORDERS.filter((o) => isThisMonth(o.dateCreated)).length
+  const disputed = ADMIN_ORDERS.filter((o) => o.status === "DISPUTED").length
 
   function setFilter<K extends keyof FilterState>(key: K, value: string) {
     setFilters((prev) => ({ ...prev, [key]: value }))
@@ -176,6 +217,14 @@ export default function AdminOrdersPage() {
 
   function clearFilters() {
     setFilters(BLANK_FILTERS)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
+        Loading orders…
+      </div>
+    )
   }
 
   // ── Filtered + searched orders ──
@@ -359,7 +408,7 @@ export default function AdminOrdersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
-                  {PRESENT_STATUSES.map((s) => (
+                  {PRESENT_STATUSES.map((s: OrderStatus) => (
                     <SelectItem key={s} value={s}>
                       {s.replace(/_/g, " ")}
                     </SelectItem>
@@ -486,7 +535,7 @@ export default function AdminOrdersPage() {
 
       {/* ── Results count ── */}
       <p className="mb-2 text-xs text-muted-foreground">
-        Showing {displayed.length} of {ADMIN_ORDERS.length} orders
+        Showing {displayed.length} of {totalOrders} orders
       </p>
 
       {/* ── Table ── */}
@@ -543,17 +592,13 @@ export default function AdminOrdersPage() {
                     <p className="font-medium text-foreground leading-tight">
                       {order.client}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {order.clientEmail}
-                    </p>
+
                   </td>
                   <td className="px-4 py-3">
                     <p className="text-foreground leading-tight">
                       {order.provider}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {order.providerEmail}
-                    </p>
+
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {order.category}
@@ -571,9 +616,7 @@ export default function AdminOrdersPage() {
                     €{order.total.toFixed(2)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                    {order.platformFee > 0
-                      ? `€${order.platformFee.toFixed(2)}`
-                      : <span className="text-xs">—</span>}
+                    <span className="text-xs">—</span>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Button

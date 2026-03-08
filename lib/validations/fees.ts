@@ -3,6 +3,8 @@ import { z } from 'zod'
 // ─── Update Fee Configuration ──────────────────────────────────────────────
 
 export const updateFeeSchema = z.object({
+  configId: z.string().optional(),
+  scope: z.enum(['global', 'org', 'service_type']).optional(),
   feeType: z.enum(['client_fee', 'provider_commission']),
   /**
    * Fee rate as a decimal (0–1).
